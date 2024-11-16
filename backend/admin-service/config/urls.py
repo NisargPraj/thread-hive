@@ -1,22 +1,33 @@
 """
-URL configuration for config project.
+Main URL Configuration for the Admin Service
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+This module defines the top-level URL patterns for the entire admin service.
+It includes both the Django admin interface (renamed to avoid conflicts)
+and our custom admin API endpoints.
 """
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # Django's built-in admin interface
+    # Renamed from 'admin/' to 'django-admin/' to avoid conflict with our API
+    path("django-admin/", admin.site.urls),
+    # Our custom admin API endpoints
+    # All endpoints under this path require authentication
+    # Available endpoints:
+    # - User Management:
+    #   * GET    /api/admin/users/
+    #   * GET    /api/admin/users/<user_id>/
+    #   * DELETE /api/admin/users/<user_id>/
+    #   * POST   /api/admin/users/warn/<user_id>/
+    #
+    # - Report Management:
+    #   * GET    /api/admin/reports/
+    #   * POST   /api/admin/reports/<report_id>/resolve/
+    #
+    # - Post Management:
+    #   * DELETE /api/admin/posts/<post_id>/
+    #   * POST   /api/admin/posts/<post_id>/block/
+    path("api/admin/", include("api.urls")),
 ]

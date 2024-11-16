@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin API Test</title>
+    <style>
+        /* Basic styling for better readability */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        // Authentication token for API requests
+        // In a production environment, this would be securely managed
+        const token = '6578f4c44b2a1ffc470541483f662c1431ea6c91';
+        
+        /**
+         * Makes an authenticated request to the specified API endpoint
+         * 
+         * @param {string} endpoint - The API endpoint to call (e.g., 'users/', 'reports/')
+         * @returns {Promise} - Resolves with the JSON response from the API
+         */
+        async function fetchEndpoint(endpoint) {
+            try {
+                // Make the API request with authentication header
+                const response = await fetch(`http://127.0.0.1:8000/api/admin/${endpoint}`, {
+                    headers: {
+                        'Authorization': `Token ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Parse and display the response
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                // Display any errors that occur
+                document.getElementById('result').textContent = error.message;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Admin API Test</h1>
+    
+    <!-- Test buttons for different API endpoints -->
+    <div>
+        <!-- Get list of users -->
+        <button onclick="fetchEndpoint('users/')">Get Users</button>
+        
+        <!-- Get list of reports -->
+        <button onclick="fetchEndpoint('reports/')">Get Reports</button>
+    </div>
+    
+    <!-- Results display area -->
+    <h2>Response:</h2>
+    <pre id="result">Click a button above to test an endpoint...</pre>
+    
+    <!-- Usage instructions -->
+    <div>
+        <h2>Instructions:</h2>
+        <p>This page provides a simple interface for testing the Admin API endpoints. Each button makes an authenticated request to a different endpoint:</p>
+        <ul>
+            <li><strong>Get Users:</strong> Retrieves the list of all users in the system</li>
+            <li><strong>Get Reports:</strong> Retrieves the list of all reported content</li>
+        </ul>
+        <p>The response from each request will be displayed in the "Response" section above.</p>
+        <p><em>Note: All requests include authentication using the token specified in the JavaScript code.</em></p>
+    </div>
+</body>
+</html>
