@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables and secrets
+.env
+*.env
+
+# Virtual environments
+.venv/
+venv/
+
+# Django specific files
+db.sqlite3
+*.log
+
+# Docker-related files
+*.pid
+docker-compose.override.yml
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
