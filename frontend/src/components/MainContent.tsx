@@ -1,4 +1,4 @@
-import Post from "./Post";
+import Post from "./shared/Post";
 import { posts } from "@/constants/post";
 
 const MainContent = () => {
