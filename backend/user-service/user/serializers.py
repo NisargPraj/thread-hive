@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User, make_password
 from .models import CustomUser
-from .utils.neo4j import neo4j_connection
+from .utils.neo4j_conn import neo4j_connection
 
 
 class UserSignupSerializer(serializers.ModelSerializer):

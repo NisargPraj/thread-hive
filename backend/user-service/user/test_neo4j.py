@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Set the environment variable for Django settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
-from .utils.neo4j import neo4j_connection
+from .utils.neo4j_conn import neo4j_connection
 
 def test_neo4j_connection():
     try:

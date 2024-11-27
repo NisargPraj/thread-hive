@@ -14,7 +14,7 @@ from .serializers import (
     FollowSerializer
 )
 from django.contrib.auth.models import User
-from .utils.neo4j import neo4j_connection
+from .utils.neo4j_conn import neo4j_connection
 
 
 class SignupView(APIView):
