@@ -8,14 +8,11 @@ services:
       - "8000:8000"
     env_file:
       - ./user-service/.env
-#    environment:
-#      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql_db:3306/${MYSQL_DB_NAME}
-#      - NEO4J_URI=bolt://neo4j_db:7687
-#      - NEO4J_USERNAME=neo4j
-#      - NEO4J_PASSWORD=P@7w^L!xZ#4QfN%9t
     depends_on:
       - mysql_db
       - neo4j_db
+    networks:
+      - thread-hive-network
 
   post-service:
     build:
@@ -26,8 +23,8 @@ services:
       - ./post-service/.env
     depends_on:
       - mongodb
-#    environment:
-#      - MONGO_URI=${MONGO_URI}
+    networks:
+      - thread-hive-network
 
 #  admin-service:
 #    build:
@@ -43,15 +40,13 @@ services:
     restart: always
     env_file:
       - ./user-service/.env
-#    environment:
-#      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-#      MYSQL_USER: ${MYSQL_USER}
-#      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-#      MYSQL_DATABASE: ${MYSQL_DB_NAME}
     ports:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init-mysql:/docker-entrypoint-initdb.d
+    networks:
+      - thread-hive-network
 
   neo4j_db:
     image: neo4j:5.8.0
@@ -62,12 +57,11 @@ services:
       - "7687:7687"
     env_file:
       - ./user-service/.env
-#    environment:
-#      - NEO4J_AUTH=neo4j/P@7w^L!xZ#4QfN%9t
-#      -
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
+    networks:
+      - thread-hive-network
 
   mongodb:
     image: mongo:6.0
@@ -75,16 +69,19 @@ services:
     restart: always
     env_file:
       - ./post-service/.env
-#    environment:
-#      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-#      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
       - "27018:27017"
     volumes:
       - mongodb_data:/data/db
+    networks:
+      - thread-hive-network
 
 volumes:
   mysql_data:
   neo4j_data:
   neo4j_logs:
   mongodb_data:
+
+networks:
+  thread-hive-network:
+
