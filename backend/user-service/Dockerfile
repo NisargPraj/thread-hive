@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 COPY .env /app/.env
 EXPOSE 8000
-CMD ["/wait-for-it.sh", "mysql_db:3306", "--", "sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+CMD ["/wait-for-it.sh", "mysql_db:3306", "--timeout=60", "--", "sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
