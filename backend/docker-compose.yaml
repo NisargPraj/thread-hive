@@ -6,15 +6,82 @@ services:
       context: ./user-service
     ports:
       - "8000:8000"
+    env_file:
+      - ./user-service/.env
+    depends_on:
+      - mysql_db
+      - neo4j_db
+    networks:
+      - thread-hive-network
 
   post-service:
     build:
       context: ./post-service
     ports:
       - "8001:8000"
+    env_file:
+      - ./post-service/.env
+    depends_on:
+      - mongodb
+    networks:
+      - thread-hive-network
 
-  admin-service:
-    build:
-      context: ./admin-service
+#  admin-service:
+#    build:
+#      context: ./admin-service
+#    ports:
+#      - "8002:8000"
+#    env_file:
+#      - ./admin-service/.env.example
+
+  mysql_db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    env_file:
+      - ./user-service/.env
     ports:
-      - "8002:8000"
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-mysql:/docker-entrypoint-initdb.d
+    networks:
+      - thread-hive-network
+
+  neo4j_db:
+    image: neo4j:5.8.0
+    container_name: neo4j_db
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    env_file:
+      - ./user-service/.env
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - thread-hive-network
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    env_file:
+      - ./post-service/.env
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - thread-hive-network
+
+volumes:
+  mysql_data:
+  neo4j_data:
+  neo4j_logs:
+  mongodb_data:
+
+networks:
+  thread-hive-network:
+
