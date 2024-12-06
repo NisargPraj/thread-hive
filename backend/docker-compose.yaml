@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   user-service:
@@ -14,25 +14,25 @@ services:
     networks:
       - thread-hive-network
 
-  post-service:
-    build:
-      context: ./post-service
-    ports:
-      - "8001:8000"
-    env_file:
-      - ./post-service/.env
-    depends_on:
-      - mongodb
-    networks:
-      - thread-hive-network
+  # post-service:
+  #   build:
+  #     context: ./post-service
+  #   ports:
+  #     - "8001:8000"
+  #   env_file:
+  #     - ./post-service/.env
+  #   depends_on:
+  #     - mongodb
+  #   networks:
+  #     - thread-hive-network
 
-#  admin-service:
-#    build:
-#      context: ./admin-service
-#    ports:
-#      - "8002:8000"
-#    env_file:
-#      - ./admin-service/.env.example
+  #  admin-service:
+  #    build:
+  #      context: ./admin-service
+  #    ports:
+  #      - "8002:8000"
+  #    env_file:
+  #      - ./admin-service/.env.example
 
   mysql_db:
     image: mysql:8.0
@@ -63,25 +63,24 @@ services:
     networks:
       - thread-hive-network
 
-  mongodb:
-    image: mongo:6.0
-    container_name: mongodb
-    restart: always
-    env_file:
-      - ./post-service/.env
-    ports:
-      - "27018:27017"
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - thread-hive-network
+  # mongodb:
+  #   image: mongo:6.0
+  #   container_name: mongodb
+  #   restart: always
+  #   env_file:
+  #     - ./post-service/.env
+  #   ports:
+  #     - "27018:27017"
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   networks:
+  #     - thread-hive-network
 
 volumes:
   mysql_data:
   neo4j_data:
   neo4j_logs:
-  mongodb_data:
+  # mongodb_data:
 
 networks:
   thread-hive-network:
-

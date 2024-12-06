@@ -25,6 +25,8 @@ docker-compose.override.yml
 *.swp
 *~
 
+init-mysql/init.sql
+
 # OS files
 =======
 # Python

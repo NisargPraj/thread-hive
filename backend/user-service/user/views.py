@@ -48,10 +48,10 @@ class LoginView(APIView):
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, user_id=None):
-        if user_id:
+    def get(self, request, username=None):
+        if username:
             try:
-                user = get_object_or_404(CustomUser, id=user_id)
+                user = get_object_or_404(CustomUser, username=username)
                 serializer = UserProfileSerializer(user)
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except User.DoesNotExist:
@@ -74,9 +74,9 @@ class UpdateProfileView(APIView):
 class FollowUserView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, user_id):
+    def post(self, request, username):
         try:
-            user_to_follow = get_object_or_404(CustomUser, id=user_id)
+            user_to_follow = get_object_or_404(CustomUser, username=username)
 
             query_check_block = """
                 MATCH (u1:User {id: $user1_id})-[rel:BLOCK]->(u2:User {id: $user2_id})
@@ -133,9 +133,9 @@ class FollowUserView(APIView):
 class UnfollowUserView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, user_id):
+    def post(self, request, username):
         try:
-            user_to_unfollow = get_object_or_404(CustomUser, id=user_id)
+            user_to_unfollow = get_object_or_404(CustomUser, username=username)
 
             query = """
                 MATCH (u1:User {id: $follower_id})-[r:FOLLOW]->(u2:User {id: $followee_id})
@@ -156,9 +156,9 @@ class UnfollowUserView(APIView):
 class BlockUserView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, user_id):
+    def post(self, request, username):
         try:
-            user_to_block = get_object_or_404(CustomUser, id=user_id)
+            user_to_block = get_object_or_404(CustomUser, id=username)
 
             query_check = """
                 MATCH (u1:User {id: $blocker_id})-[rel:BLOCK]->(u2:User {id: $blocked_id})
@@ -207,9 +207,9 @@ class BlockUserView(APIView):
 class UnblockUserView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, user_id):
+    def post(self, request, username):
         try:
-            user_to_unblock = get_object_or_404(CustomUser, id=user_id)
+            user_to_unblock = get_object_or_404(CustomUser, username=username)
 
             query_check = """
                 MATCH (u1:User {id: $blocker_id})-[rel:BLOCK]->(u2:User {id: $blocked_id})

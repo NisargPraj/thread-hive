@@ -8,7 +8,7 @@ const Header: React.FC = () => {
     <header className="sticky top-0 z-50 bg-white border-b">
       <div className="flex items-center justify-between px-4 py-3">
         <Link to="/" className="text-xl font-bold">
-          Social App
+          Thread Hive
         </Link>
         <nav className="flex items-center space-x-4">
           <Link to="/" className="p-2 hover:bg-gray-100 rounded-full">
