@@ -111,6 +111,10 @@ class LikeSerializer(DocumentSerializer):
     Ensures a user can like a post only once.
     """
 
+    username = serializers.CharField(
+        required=False
+    )  # Make username optional since it's set in view
+
     class Meta:
         model = Like
         fields = ["id", "post", "username", "created_at"]
@@ -132,6 +136,10 @@ class CommentSerializer(DocumentSerializer):
     """
     Serializer for handling comments on posts.
     """
+
+    username = serializers.CharField(
+        required=False
+    )  # Make username optional since it's set in view
 
     class Meta:
         model = Comment

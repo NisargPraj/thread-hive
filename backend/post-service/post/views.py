@@ -140,6 +140,18 @@ class LikeViewSet(ModelViewSet):
     serializer_class = LikeSerializer
     permission_classes = [IsAuthenticatedCustom]
 
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new like with the authenticated user's username.
+        """
+        data = request.data.copy()
+        data["username"] = request.user
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=201, headers=headers)
+
     def perform_create(self, serializer):
         """
         Ensure a user can like a post only once.
@@ -160,6 +172,18 @@ class CommentViewSet(ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedCustom]
+
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new comment with the authenticated user's username.
+        """
+        data = request.data.copy()
+        data["username"] = request.user
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=201, headers=headers)
 
     def perform_create(self, serializer):
         """
