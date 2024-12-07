@@ -38,6 +38,7 @@ const Login: React.FC = () => {
 
       const data = await response.json();
       localStorage.setItem("access_token", data.access);
+      localStorage.setItem("refresh_token", data.refresh);
 
       // Redirect to home or profile after login
       navigate("/");

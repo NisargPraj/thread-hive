@@ -44,6 +44,22 @@ class LoginView(APIView):
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        print(request.data)
+        try:
+            
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response({"message": "Successfully logged out"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -259,12 +275,15 @@ class BlockedListView(APIView):
 class FollowingListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, username=None):
+
+        user = get_object_or_404(CustomUser, username=username)
+
         query = """
-                MATCH (u1:User {id: $user_id})-[:FOLLOW]->(u2:User)
-                RETURN u2
-            """
-        results = neo4j_connection.query(query, parameters={'user_id': request.user.id})
+            MATCH (u1:User {id: $user_id})-[:FOLLOW]->(u2:User)
+            RETURN u2
+        """
+        results = neo4j_connection.query(query, parameters={'user_id': user.id})
 
         following_users = [
             {
@@ -277,21 +296,20 @@ class FollowingListView(APIView):
             for record in results
         ]
 
-        if not following_users:
-            return Response({"message": "You are not following anyone."}, status=status.HTTP_200_OK)
-
         return Response(following_users, status=status.HTTP_200_OK)
 
 
 class FollowersListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, username=None):
+
+        user = get_object_or_404(CustomUser, username=username)
         query = """
-                MATCH (u1:User)-[:FOLLOW]->(u2:User {id: $user_id})
-                RETURN u1
-            """
-        results = neo4j_connection.query(query, parameters={'user_id': request.user.id})
+            MATCH (u1:User)-[:FOLLOW]->(u2:User {id: $user_id})
+            RETURN u1
+        """
+        results = neo4j_connection.query(query, parameters={'user_id': user.id})
 
         followers = [
             {
@@ -304,7 +322,6 @@ class FollowersListView(APIView):
             for record in results
         ]
 
-        if not followers:
-            return Response({"message": "You have no followers."}, status=status.HTTP_200_OK)
-
         return Response(followers, status=status.HTTP_200_OK)
+
+

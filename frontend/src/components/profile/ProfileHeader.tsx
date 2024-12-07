@@ -2,14 +2,12 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 
 interface ProfileHeaderProps {
   username: string;
-  handle: string;
   avatar: string;
   bio: string;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   username,
-  handle,
   avatar,
   bio,
 }) => {
@@ -21,7 +19,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </Avatar>
         <div className="flex-1">
           <h1 className="text-xl font-bold">{username}</h1>
-          <p className="text-gray-600">{handle}</p>
           <p className="mt-2">{bio}</p>
         </div>
       </div>

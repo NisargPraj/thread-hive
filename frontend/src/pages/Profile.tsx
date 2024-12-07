@@ -1,19 +1,19 @@
-import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfilePosts } from "@/components/profile/ProfilePosts";
-import { ProfileStats } from "@/components/profile/ProfileStats";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { UserPlus, User, UserMinus } from "lucide-react";
 
 const BASE_URL = "http://localhost:8000/api/users/";
 
 interface UserProfile {
   username: string;
-  handle: string;
   avatar_url: string;
   bio: string;
   following: number;
   followers: number;
-  joined: string;
 }
 
 const Profile: React.FC = () => {
@@ -21,10 +21,15 @@ const Profile: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [followingCount, setFollowingCount] = useState<number>(0);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
 
   const profileUrl = `${BASE_URL}profile/${username}/`;
   const currentUserUrl = `${BASE_URL}profile/`;
+  const followersUrl = `${BASE_URL}followers/${username}/`;
+  const followingUrl = `${BASE_URL}following/${username}/`;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -43,7 +48,7 @@ const Profile: React.FC = () => {
           throw new Error("Failed to fetch current user");
         }
 
-        const currentUserData = currentUserResponse.json();
+        const currentUserData = await currentUserResponse.json();
         setCurrentUser(currentUserData.username);
 
         const profileResponse = await fetch(profileUrl, {
@@ -57,19 +62,39 @@ const Profile: React.FC = () => {
         }
 
         const profileData = await profileResponse.json();
-        console.log("[DEBUG]: data burada: ", profileData);
 
         const transformedProfile: UserProfile = {
           username: profileData.username,
-          handle: profileData.handle,
-          avatar_url: profileData.avatar_url,
+          avatar_url: profileData.profile_image,
           bio: profileData.bio,
           following: profileData.following,
           followers: profileData.followers,
-          joined: profileData.joined,
         };
 
         setProfile(transformedProfile);
+
+        const followersResponse = await fetch(followersUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (followersResponse.ok) {
+          const followersData = await followersResponse.json();
+
+          setFollowersCount(followersData.length);
+          setIsFollowing(
+            followersData.some(
+              (follower: any) => follower.username === currentUserData.username
+            )
+          );
+        }
+
+        // Fetch following count
+        const followingResponse = await fetch(followingUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (followingResponse.ok) {
+          const followingData = await followingResponse.json();
+          setFollowingCount(followingData.length);
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -78,7 +103,63 @@ const Profile: React.FC = () => {
     };
 
     fetchProfile();
-  }, [currentUserUrl, profileUrl]);
+  }, [currentUserUrl, profileUrl, followersUrl, followingUrl]);
+
+  const handleFollow = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      const followUrl = `${BASE_URL}follow/${profile?.username}/`;
+
+      const response = await fetch(followUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to follow user: ${response.statusText}`);
+      }
+
+      setIsFollowing(true);
+      setFollowersCount((prev) => prev + 1);
+    } catch (error: any) {
+      console.error("Error following user:", error.message);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      const unfollowUrl = `${BASE_URL}unfollow/${profile?.username}/`;
+
+      const response = await fetch(unfollowUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to unfollow user: ${response.statusText}`);
+      }
+
+      setIsFollowing(false);
+      setFollowersCount((prev) => prev - 1);
+    } catch (error: any) {
+      console.error("Error unfollowing user:", error.message);
+    }
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center">Loading...</div>;
@@ -103,32 +184,77 @@ const Profile: React.FC = () => {
   const isCurrentUser: boolean = profile.username === currentUser;
 
   return (
-    <div className="flex flex-col gap-4">
-      <ProfileHeader
-        username={profile.username}
-        handle={profile.handle}
-        avatar={profile.avatar_url}
-        bio={profile.bio}
-      />
-      <ProfileStats
-        following={profile.following}
-        followers={profile.followers}
-        joined={profile.joined}
-      />
-      <div className="actions">
-        {isCurrentUser ? (
-          <div className="flex gap-2">
-            <button className="btn-primary">Edit Profile</button>
-            <button className="btn-secondary">Update Password</button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <button className="btn-primary">Follow</button>
-            <button className="btn-secondary">Message</button>
-          </div>
-        )}
+    <div className="max-w-4xl mx-auto p-4">
+      <div className="relative">
+        {/* Cover Photo Placeholder */}
+        <div className="h-40 bg-gray-200 rounded-t-lg"></div>
+
+        {/* Profile Picture */}
+        <Avatar className="w-32 h-32 absolute -bottom-16 left-4 border-4 border-white">
+          <AvatarImage src={profile.avatar_url || ""} alt={profile.username} />
+          <AvatarFallback>
+            <User className="w-12 h-12 text-gray-500" />
+          </AvatarFallback>
+        </Avatar>
+
+        {/* Follow Button */}
+        <div className="absolute top-4 right-4">
+          {!isCurrentUser &&
+            (isFollowing ? (
+              <Button variant="secondary" onClick={handleUnfollow}>
+                <UserMinus className="mr-2 h-5 w-5" /> Unfollow
+              </Button>
+            ) : (
+              <Button variant="default" onClick={handleFollow}>
+                <UserPlus className="mr-2 h-5 w-5" /> Follow
+              </Button>
+            ))}
+        </div>
       </div>
-      <ProfilePosts username={profile.username} />
+
+      <div className="mt-16 p-4">
+        {/* Profile Name and Username */}
+        <h1 className="text-2xl font-bold">{profile.username}</h1>
+        <p className="text-gray-500">@{profile.username}</p>
+
+        {/* Bio */}
+        <p className="mt-2">{profile.bio}</p>
+
+        {/* Profile Stats */}
+        <div className="flex gap-4 mt-4">
+          <div>
+            <span className="font-bold">{followersCount}</span> Followers
+          </div>
+          <div>
+            <span className="font-bold">{followingCount}</span> Following
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <Tabs defaultValue="posts" className="mt-6 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
+            <TabsTrigger value="posts" className="w-full">
+              Posts
+            </TabsTrigger>
+            <TabsTrigger value="replies" className="w-full">
+              Replies
+            </TabsTrigger>
+            <TabsTrigger value="media" className="w-full">
+              Media
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="posts">
+            <ProfilePosts username={profile.username} />
+          </TabsContent>
+          <TabsContent value="replies">
+            <div>Replies content coming soon...</div>
+          </TabsContent>
+          <TabsContent value="media">
+            <div>Media content coming soon...</div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
