@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   user-service:
@@ -26,13 +26,13 @@ services:
     networks:
       - thread-hive-network
 
-#  admin-service:
-#    build:
-#      context: ./admin-service
-#    ports:
-#      - "8002:8000"
-#    env_file:
-#      - ./admin-service/.env.example
+  #  admin-service:
+  #    build:
+  #      context: ./admin-service
+  #    ports:
+  #      - "8002:8000"
+  #    env_file:
+  #      - ./admin-service/.env.example
 
   mysql_db:
     image: mysql:8.0
