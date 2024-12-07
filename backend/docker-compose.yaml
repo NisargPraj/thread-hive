@@ -73,6 +73,7 @@ services:
       - "27018:27017"
     volumes:
       - mongodb_data:/data/db
+      - ./init-mongodb:/docker-entrypoint-initdb.d
     networks:
       - thread-hive-network
 
@@ -84,4 +85,3 @@ volumes:
 
 networks:
   thread-hive-network:
-

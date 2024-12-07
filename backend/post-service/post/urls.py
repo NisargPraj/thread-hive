@@ -1,15 +1,58 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import PostViewSet, LikeViewSet, CommentViewSet, HashtagViewSet
+from django.urls import path
+from .views import (
+    PostViewSet,
+    SpecificPostViewSet,
+    LikeViewSet,
+    CommentViewSet,
+    HashtagViewSet,
+    HashtagGeneratorViewSet,
+)
 
-# Create a router and register viewsets
-router = DefaultRouter()
-router.register(r'posts', PostViewSet, basename='post')
-router.register(r'likes', LikeViewSet, basename='like')
-router.register(r'comments', CommentViewSet, basename='comment')
-router.register(r'hashtags', HashtagViewSet, basename='hashtag')
-
-# Include the router's URLs
 urlpatterns = [
-    path('', include(router.urls)),  # Includes all the routes from the router
+    # Post endpoints
+    path(
+        "posts/",
+        PostViewSet.as_view({"get": "list", "post": "create"}),
+        name="post-list",
+    ),
+    path(
+        "posts/<str:pk>/",
+        PostViewSet.as_view({"get": "retrieve", "put": "update", "delete": "destroy"}),
+        name="post-detail",
+    ),
+    # Feed endpoint (posts from followed users)
+    path(
+        "feed/",
+        SpecificPostViewSet.as_view({"get": "list"}),
+        name="feed-list",
+    ),
+    # Like endpoints
+    path("likes/", LikeViewSet.as_view({"post": "create"}), name="like-create"),
+    path(
+        "likes/<str:pk>/",
+        LikeViewSet.as_view({"delete": "destroy"}),
+        name="like-delete",
+    ),
+    # Comment endpoints
+    path(
+        "comments/", CommentViewSet.as_view({"post": "create"}), name="comment-create"
+    ),
+    path(
+        "comments/<str:pk>/",
+        CommentViewSet.as_view({"delete": "destroy"}),
+        name="comment-delete",
+    ),
+    # Hashtag endpoints
+    path("hashtags/", HashtagViewSet.as_view({"get": "list"}), name="hashtag-list"),
+    path(
+        "hashtags/<str:pk>/",
+        HashtagViewSet.as_view({"get": "retrieve"}),
+        name="hashtag-detail",
+    ),
+    # Hashtag generator endpoint
+    path(
+        "hashtag-generator/generate/",
+        HashtagGeneratorViewSet.as_view({"post": "generate"}),
+        name="hashtag-generate",
+    ),
 ]
