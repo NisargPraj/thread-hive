@@ -42,8 +42,12 @@ const Login: React.FC = () => {
 
       // Redirect to home or profile after login
       navigate("/");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
@@ -82,6 +86,16 @@ const Login: React.FC = () => {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
+
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={() => navigate("/register")}
+            className="text-blue-500 hover:text-blue-700"
+          >
+            Don't have an account? Sign up
+          </button>
+        </div>
       </form>
     </div>
   );

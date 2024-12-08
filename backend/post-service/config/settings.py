@@ -23,17 +23,18 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_mongoengine",
+    "corsheaders", 
     "post",  # Your post-service app
 ]
 
 # Middleware configuration (minimal for MongoEngine)
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",  # Required by auth
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    # 'mongoengine.django.middleware.MongoEngineMiddleware',
 ]
 
 DATABASES = {
@@ -41,7 +42,6 @@ DATABASES = {
         "ENGINE": "django.db.backends.dummy",
     }
 }
-
 
 # REST Framework configuration
 REST_FRAMEWORK = {
@@ -55,7 +55,6 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,  # Number of records per page
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
 }
-
 
 # Simple JWT configuration
 SIMPLE_JWT = {
@@ -89,3 +88,32 @@ STATIC_URL = "/static/"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:8001",
+    "http://localhost:3000"
+]
+
+# Allow all CORS methods
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+# Allow all headers
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]

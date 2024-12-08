@@ -12,6 +12,7 @@ class PostSerializer(DocumentSerializer):
     hashtags = serializers.ListField(
         child=serializers.CharField(max_length=50), allow_empty=True, required=False
     )
+    likes = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -23,8 +24,23 @@ class PostSerializer(DocumentSerializer):
             "hashtags",
             "created_at",
             "updated_at",
+            "likes",
         ]
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at", "likes"]
+
+    def get_likes(self, obj):
+        """Get the number of likes for a post"""
+        return Like.objects(post=obj).count()
+
+    def to_representation(self, instance):
+        """Customize the output representation"""
+        ret = super().to_representation(instance)
+        # Convert created_at to string format for frontend
+        ret['timestamp'] = ret.pop('created_at')
+        # Convert image FileField to URLs if present
+        if ret.get('images'):
+            ret['images'] = [str(img) for img in ret['images']]
+        return ret
 
     def validate_hashtags(self, value):
         """

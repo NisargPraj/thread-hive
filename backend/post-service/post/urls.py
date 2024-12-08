@@ -1,4 +1,5 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 from .views import (
     PostViewSet,
     SpecificPostViewSet,
@@ -9,50 +10,74 @@ from .views import (
 )
 
 urlpatterns = [
-    # Post endpoints
+    # General post endpoints
     path(
-        "posts/",
-        PostViewSet.as_view({"get": "list", "post": "create"}),
-        name="post-list",
+        "all/",
+        PostViewSet.as_view({"get": "list"}),
+        name="all-posts",
     ),
     path(
-        "posts/<str:pk>/",
-        PostViewSet.as_view({"get": "retrieve", "put": "update", "delete": "destroy"}),
+        "create/",
+        PostViewSet.as_view({"post": "create"}),
+        name="create-post",
+    ),
+    path(
+        "<str:pk>/",
+        PostViewSet.as_view({
+            "get": "retrieve",
+            "put": "update",
+            "delete": "destroy"
+        }),
         name="post-detail",
     ),
+
     # Feed endpoint (posts from followed users)
     path(
-        "feed/",
+        "following/",
         SpecificPostViewSet.as_view({"get": "list"}),
-        name="feed-list",
+        name="following-posts",
     ),
+
     # Like endpoints
-    path("likes/", LikeViewSet.as_view({"post": "create"}), name="like-create"),
     path(
-        "likes/<str:pk>/",
-        LikeViewSet.as_view({"delete": "destroy"}),
-        name="like-delete",
+        "<str:post_id>/like/",
+        LikeViewSet.as_view({"post": "create", "delete": "destroy"}),
+        name="post-like",
     ),
+
     # Comment endpoints
     path(
-        "comments/", CommentViewSet.as_view({"post": "create"}), name="comment-create"
+        "<str:post_id>/comments/",
+        CommentViewSet.as_view({
+            "get": "list",
+            "post": "create"
+        }),
+        name="post-comments",
     ),
     path(
-        "comments/<str:pk>/",
-        CommentViewSet.as_view({"delete": "destroy"}),
-        name="comment-delete",
+        "<str:post_id>/comments/<str:pk>/",
+        CommentViewSet.as_view({
+            "get": "retrieve",
+            "put": "update",
+            "delete": "destroy"
+        }),
+        name="comment-detail",
     ),
+
     # Hashtag endpoints
-    path("hashtags/", HashtagViewSet.as_view({"get": "list"}), name="hashtag-list"),
+    path(
+        "hashtags/",
+        HashtagViewSet.as_view({"get": "list"}),
+        name="hashtag-list",
+    ),
     path(
         "hashtags/<str:pk>/",
         HashtagViewSet.as_view({"get": "retrieve"}),
-        name="hashtag-detail",
+        name="hashtag-posts",
     ),
-    # Hashtag generator endpoint
     path(
-        "hashtag-generator/generate/",
-        HashtagGeneratorViewSet.as_view({"post": "generate"}),
-        name="hashtag-generate",
+        "hashtags/generate/",
+        HashtagGeneratorViewSet.as_view({"post": "post"}),
+        name="generate-hashtags",
     ),
-]
+] 
