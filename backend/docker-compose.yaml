@@ -26,13 +26,19 @@ services:
     networks:
       - thread-hive-network
 
-  #  admin-service:
-  #    build:
-  #      context: ./admin-service
-  #    ports:
-  #      - "8002:8000"
-  #    env_file:
-  #      - ./admin-service/.env.example
+  admin-service:
+    build:
+      context: ./admin-service
+    ports:
+     - "8002:8000"
+    env_file:
+     - ./admin-service/.env
+    depends_on:
+      - post-service
+      - user-service
+      - mysql_db
+    networks:
+      - thread-hive-network
 
   mysql_db:
     image: mysql:8.0

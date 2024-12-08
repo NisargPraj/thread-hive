@@ -6,10 +6,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class CustomJWTAuthentication(JWTAuthentication):
+class CustomTokenAuthentication(JWTAuthentication):
     def authenticate(self, request):
         """
-        Authenticate using JWT token.
+        Authenticate using JWT token and pass it along to the user service.
         """
         auth_header = request.headers.get("Authorization")
         if not auth_header:
@@ -24,14 +24,7 @@ class CustomJWTAuthentication(JWTAuthentication):
             token = auth_parts[1]
             logger.debug(f"Received token: {token}")
 
-            # Validate the token
-            validated_token = self.get_validated_token(token)
-
-            # Get the user from the token
-            username = validated_token["username"]
-            logger.debug(f"Authenticated user: {username}")
-
-            # Return the token as both the user and auth
+            # Return the raw token as both the user and auth
             return (token, token)
 
         except Exception as e:

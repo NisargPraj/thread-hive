@@ -33,15 +33,14 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",  # Required by auth
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    # 'mongoengine.django.middleware.MongoEngineMiddleware',
 ]
 
+# Using dummy database since we're using mongoengine for MongoDB
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.dummy",
     }
 }
-
 
 # REST Framework configuration
 REST_FRAMEWORK = {
@@ -55,7 +54,6 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,  # Number of records per page
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
 }
-
 
 # Simple JWT configuration
 SIMPLE_JWT = {
@@ -71,11 +69,11 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
 
-# MongoDB Configuration
+# MongoDB Configuration using mongoengine
 MONGO_DB_NAME = config("MONGO_DB_NAME")
 MONGO_HOST = config("MONGO_URI")
 
-#  Connect to MongoDB
+# Connect to MongoDB using mongoengine
 connect(db=MONGO_DB_NAME, host=MONGO_HOST)
 
 # Time zone and internationalization

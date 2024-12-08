@@ -37,6 +37,12 @@ urlpatterns = [
     ),
     # Post Management Endpoints
     # -----------------------
+    # GET: List all posts
+    path(
+        "posts/",
+        views.AdminPostViewSet.as_view({"get": "list"}),
+        name="list-posts",
+    ),
     # DELETE: Remove an inappropriate post
     path(
         "posts/<str:post_id>/",
