@@ -24,17 +24,20 @@ INSTALLED_APPS = [
     "rest_framework",
     "api",
     "corsheaders",
+    "django_prometheus",
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -59,7 +62,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
+        "ENGINE": "django_prometheus.db.backends.mysql",
         "NAME": os.getenv("DB_NAME", "admin_service_db"),
         "USER": os.getenv("DB_USER", "root"),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
@@ -105,7 +108,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.BasicAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
@@ -113,4 +116,23 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://localhost:8002",
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:8002",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# Service Health Check Configuration
+SERVICE_HEALTH_CHECK_TIMEOUT = 5  # seconds
+SERVICE_URLS = {
+    "user-service": "http://user-service:8000/health/",
+    "post-service": "http://post-service:8000/health/",
+    "kafka-consumer": "http://kafka-consumer:8000/health/",
+}
+
+# Prometheus Configuration
+PROMETHEUS_EXPORT_MIGRATIONS = False

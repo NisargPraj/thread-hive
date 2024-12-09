@@ -26,13 +26,20 @@ services:
     networks:
       - thread-hive-network
 
-  #  admin-service:
-  #    build:
-  #      context: ./admin-service
-  #    ports:
-  #      - "8002:8000"
-  #    env_file:
-  #      - ./admin-service/.env.example
+  admin-service:
+    build:
+      context: ./admin-service
+    ports:
+      - "8002:8000"
+    env_file:
+      - ./admin-service/.env
+    depends_on:
+      - admin_mysql_db
+      - user-service
+      - post-service
+      - kafka-consumer
+    networks:
+      - thread-hive-network
 
   mysql_db:
     image: mysql:8.0
@@ -45,6 +52,20 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init-mysql:/docker-entrypoint-initdb.d
+    networks:
+      - thread-hive-network
+
+  admin_mysql_db:
+    image: mysql:8.0
+    container_name: admin_mysql_db
+    restart: always
+    env_file:
+      - ./admin-service/.env
+    ports:
+      - "3308:3306"
+    volumes:
+      - admin_mysql_data:/var/lib/mysql
+      - ./init-admin-mysql:/docker-entrypoint-initdb.d
     networks:
       - thread-hive-network
 
@@ -117,6 +138,7 @@ services:
 
 volumes:
   mysql_data:
+  admin_mysql_data:
   neo4j_data:
   neo4j_logs:
   mongodb_data:

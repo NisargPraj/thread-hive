@@ -1,93 +1,68 @@
 from django.db import models
 
 
-class Report(models.Model):
+class ServiceHealth(models.Model):
     """
-    Model for handling reported content in the system.
+    Model for tracking the health status of microservices.
 
-    This model stores information about reported posts, including who reported them,
-    the reason for the report, and the current status of the report.
+    This model maintains the current health status of each service in the system,
+    including the last successful health check and any error information.
 
     Attributes:
-        report_id (AutoField): Primary key for the report
-        post_id (CharField): ID of the reported post
-        reporter_id (CharField): ID of the user who made the report
-        reason (TextField): Detailed explanation of why the post was reported
-        status (CharField): Current status of the report (pending/resolved)
-        created_at (DateTimeField): When the report was created
-        resolved_at (DateTimeField): When the report was resolved (if applicable)
-        resolution_action (CharField): What action was taken to resolve the report
+        service_name (CharField): Name of the service (e.g., 'user-service', 'post-service')
+        status (CharField): Current health status of the service
+        last_check (DateTimeField): When the service was last checked
+        last_successful_check (DateTimeField): When the service last responded successfully
+        error_message (TextField): Details of any current error condition
+        response_time (FloatField): Last recorded response time in milliseconds
     """
 
-    REPORT_STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("resolved", "Resolved"),
+    SERVICE_STATUS_CHOICES = [
+        ("healthy", "Healthy"),
+        ("degraded", "Degraded"),
+        ("down", "Down"),
     ]
 
-    report_id = models.AutoField(primary_key=True)
-    post_id = models.CharField(max_length=255)
-    reporter_id = models.CharField(max_length=255)
-    reason = models.TextField()
+    service_name = models.CharField(max_length=100, unique=True)
     status = models.CharField(
-        max_length=20, choices=REPORT_STATUS_CHOICES, default="pending"
+        max_length=20, choices=SERVICE_STATUS_CHOICES, default="healthy"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    resolved_at = models.DateTimeField(null=True, blank=True)
-    resolution_action = models.CharField(
-        max_length=50, null=True, blank=True
-    )  # e.g., 'remove', 'warn'
+    last_check = models.DateTimeField(auto_now=True)
+    last_successful_check = models.DateTimeField(null=True)
+    error_message = models.TextField(null=True, blank=True)
+    response_time = models.FloatField(null=True)  # in milliseconds
 
     class Meta:
-        ordering = ["-created_at"]
+        verbose_name_plural = "Service health statuses"
 
 
-class UserWarning(models.Model):
+class ServiceMetrics(models.Model):
     """
-    Model for storing warnings issued to users by administrators.
+    Model for storing service performance metrics.
 
-    This model keeps track of official warnings given to users for inappropriate
-    behavior or content violations.
+    This model captures various performance metrics for each service,
+    enabling monitoring and analysis of service behavior over time.
 
     Attributes:
-        user_id (CharField): ID of the warned user
-        reason (TextField): Explanation of why the warning was issued
-        created_at (DateTimeField): When the warning was issued
-        warned_by (CharField): ID of the admin who issued the warning
+        service_name (CharField): Name of the service
+        timestamp (DateTimeField): When these metrics were recorded
+        cpu_usage (FloatField): CPU usage percentage
+        memory_usage (FloatField): Memory usage in MB
+        request_count (IntegerField): Number of requests handled
+        error_count (IntegerField): Number of errors encountered
+        average_response_time (FloatField): Average response time in milliseconds
     """
 
-    user_id = models.CharField(max_length=255)
-    reason = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    warned_by = models.CharField(max_length=255)  # Admin who issued the warning
+    service_name = models.CharField(max_length=100)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    cpu_usage = models.FloatField(null=True)
+    memory_usage = models.FloatField(null=True)  # in MB
+    request_count = models.IntegerField(default=0)
+    error_count = models.IntegerField(default=0)
+    average_response_time = models.FloatField(null=True)  # in milliseconds
 
     class Meta:
-        ordering = ["-created_at"]
-
-
-class BlockedPost(models.Model):
-    """
-    Model for managing temporarily or permanently blocked posts.
-
-    This model handles posts that have been hidden from users due to content
-    violations or other administrative actions.
-
-    Attributes:
-        post_id (CharField): ID of the blocked post
-        blocked_at (DateTimeField): When the post was blocked
-        blocked_by (CharField): ID of the admin who blocked the post
-        duration (IntegerField): How long the post should be blocked (in hours)
-        reason (TextField): Why the post was blocked
-        expires_at (DateTimeField): When the block expires (null for permanent blocks)
-    """
-
-    post_id = models.CharField(max_length=255, unique=True)
-    blocked_at = models.DateTimeField(auto_now_add=True)
-    blocked_by = models.CharField(max_length=255)  # Admin who blocked the post
-    duration = models.IntegerField(
-        null=True, blank=True
-    )  # Duration in hours, null for permanent
-    reason = models.TextField(null=True, blank=True)
-    expires_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        ordering = ["-blocked_at"]
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["service_name", "timestamp"]),
+        ]

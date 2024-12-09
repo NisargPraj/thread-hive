@@ -1,258 +1,228 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
+import os
+import time
+import requests
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
+from rest_framework.permissions import AllowAny
+from django.http import HttpResponse
 from django.utils import timezone
-from datetime import timedelta
-from .models import Report, UserWarning, BlockedPost
-from .serializers import ReportSerializer, UserWarningSerializer, BlockedPostSerializer
+from .models import ServiceHealth, ServiceMetrics
+from .serializers import ServiceHealthSerializer, ServiceMetricsSerializer
+
+# Prometheus metrics
+REQUEST_COUNT = Counter(
+    "request_count_total", "Total request count", ["service", "endpoint"]
+)
+REQUEST_LATENCY = Histogram(
+    "request_latency_seconds", "Request latency", ["service", "endpoint"]
+)
 
 
-class AdminUserViewSet(APIView):
+class ServiceHealthView(APIView):
     """
-    ViewSet for managing user-related administrative actions.
-
-    This view handles operations related to user management, including:
-    - Listing all users
-    - Retrieving specific user details
-    - Deleting/suspending users
-
-    All endpoints require authentication and admin privileges.
+    View for managing service health checks and monitoring.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
+    def get_service_url(self, service_name):
+        """Helper method to get service URLs from environment variables"""
+        service_urls = {
+            "user-service": f"{os.getenv('USER_SERVICE_URL')}/health/",
+            "post-service": f"{os.getenv('POST_SERVICE_URL')}/health/",
+            "kafka-consumer": f"{os.getenv('KAFKA_CONSUMER_URL')}/health/",
+        }
+        return service_urls.get(service_name)
+
+    def check_service_health(self, service_name):
+        """
+        Perform health check for a specific service
+        """
+        url = self.get_service_url(service_name)
+        if not url:
+            return {"status": "down", "error": f"Unknown service: {service_name}"}
+
+        try:
+            start_time = time.time()
+            response = requests.get(url, timeout=5)
+            response_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+
+            health_status = {
+                "status": "healthy" if response.status_code == 200 else "degraded",
+                "response_time": response_time,
+                "last_check": timezone.now(),
+                "error_message": None,
+            }
+
+            if response.status_code == 200:
+                health_status["last_successful_check"] = timezone.now()
+
+            return health_status
+
+        except requests.RequestException as e:
+            return {
+                "status": "down",
+                "error_message": str(e),
+                "last_check": timezone.now(),
+            }
 
     def get(self, request):
         """
-        GET /api/admin/users/
+        GET /api/admin/health/
 
-        Retrieve a list of all users in the system.
-        This endpoint would typically integrate with the user service
-        to fetch actual user data.
-
-        Returns:
-            Response: JSON containing list of users with basic information
+        Retrieve health status for all services
         """
-        # Mock response - in production, this would fetch from user service
-        return Response(
-            {
-                "users": [
-                    {"id": "1", "username": "user1", "status": "active"},
-                    {"id": "2", "username": "user2", "status": "active"},
-                ]
+        services = ["user-service", "post-service", "kafka-consumer"]
+        health_statuses = {}
+
+        for service in services:
+            health_check = self.check_service_health(service)
+
+            # Update or create ServiceHealth record
+            service_health, _ = ServiceHealth.objects.update_or_create(
+                service_name=service,
+                defaults={
+                    "status": health_check["status"],
+                    "error_message": health_check.get("error_message"),
+                    "response_time": health_check.get("response_time"),
+                    "last_successful_check": health_check.get("last_successful_check"),
+                },
+            )
+
+            health_statuses[service] = {
+                "status": service_health.status,
+                "last_check": service_health.last_check,
+                "last_successful_check": service_health.last_successful_check,
+                "response_time": service_health.response_time,
+                "error_message": service_health.error_message,
             }
-        )
 
-    def get_user_details(self, request, user_id):
-        """
-        GET /api/admin/users/<user_id>/
-
-        Retrieve detailed information about a specific user.
-
-        Args:
-            user_id: The ID of the user to retrieve
-
-        Returns:
-            Response: JSON containing detailed user information
-        """
-        # Mock response - in production, this would fetch from user service
-        return Response(
-            {
-                "id": user_id,
-                "username": f"user{user_id}",
-                "status": "active",
-                "joined_date": "2024-01-01",
-            }
-        )
-
-    def delete(self, request, user_id):
-        """
-        DELETE /api/admin/users/<user_id>/
-
-        Suspend or delete a user from the system.
-
-        Args:
-            user_id: The ID of the user to delete/suspend
-
-        Returns:
-            Response: 204 No Content on success
-        """
-        # In production, this would make a request to the user service
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(health_statuses)
 
 
-class UserWarningView(APIView):
+class MetricsView(APIView):
     """
-    View for managing user warnings.
-
-    Handles the creation of official warnings that are issued to users
-    for content violations or inappropriate behavior.
+    View for collecting and exposing service metrics.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
-    def post(self, request, user_id):
+    def get(self, request, format=None):
         """
-        POST /api/admin/users/warn/<user_id>/
+        GET /api/admin/metrics/
 
-        Issue a warning to a specific user.
-
-        Args:
-            user_id: The ID of the user to warn
-
-        Request body:
-            - reason: Why the warning is being issued
-
-        Returns:
-            Response: Created warning details or error message
+        Retrieve metrics for all services
         """
-        serializer = UserWarningSerializer(
-            data={**request.data, "user_id": user_id, "warned_by": request.user.id}
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        metrics = {}
+        services = ["user-service", "post-service", "kafka-consumer"]
 
+        for service in services:
+            # Get the latest metrics for each service
+            latest_metrics = (
+                ServiceMetrics.objects.filter(service_name=service)
+                .order_by("-timestamp")
+                .first()
+            )
 
-class ReportViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing content reports.
+            if latest_metrics:
+                metrics[service] = {
+                    "cpu_usage": latest_metrics.cpu_usage,
+                    "memory_usage": latest_metrics.memory_usage,
+                    "request_count": latest_metrics.request_count,
+                    "error_count": latest_metrics.error_count,
+                    "average_response_time": latest_metrics.average_response_time,
+                    "timestamp": latest_metrics.timestamp,
+                }
+            else:
+                metrics[service] = {"status": "No metrics available"}
 
-    Provides endpoints for:
-    - Listing all reports
-    - Creating new reports
-    - Retrieving specific reports
-    - Resolving reports
+        return Response(metrics)
 
-    Includes pagination support and filtering options.
-    """
-
-    queryset = Report.objects.all()
-    serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
+    def post(self, request):
         """
-        GET /api/admin/reports/
+        POST /api/admin/metrics/
 
-        Retrieve a paginated list of reports.
-        Supports optional page and limit query parameters.
-
-        Query parameters:
-            - page: Page number to retrieve
-            - limit: Number of items per page
-
-        Returns:
-            QuerySet: Filtered and paginated reports
+        Record new metrics for a service
         """
-        queryset = Report.objects.all()
-        page = self.request.query_params.get("page", None)
-        limit = self.request.query_params.get("limit", None)
-
-        if page is not None and limit is not None:
-            start = (int(page) - 1) * int(limit)
-            end = start + int(limit)
-            queryset = queryset[start:end]
-
-        return queryset
-
-    @action(detail=True, methods=["post"])
-    def resolve(self, request, pk=None):
-        """
-        POST /api/admin/reports/<report_id>/resolve/
-
-        Resolve a reported post by taking appropriate action.
-
-        Args:
-            pk: The ID of the report to resolve
-
-        Request body:
-            - action: The action to take ('remove' or 'warn')
-
-        Returns:
-            Response: Success message or error details
-        """
-        report = self.get_object()
-        action = request.data.get("action")
-
-        if action not in ["remove", "warn"]:
+        service_name = request.data.get("service_name")
+        if not service_name:
             return Response(
-                {"error": 'Invalid action. Must be either "remove" or "warn"'},
+                {"error": "service_name is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        report.status = "resolved"
-        report.resolved_at = timezone.now()
-        report.resolution_action = action
-        report.save()
-
-        return Response({"status": "report resolved"})
-
-
-class AdminPostViewSet(viewsets.ViewSet):
-    """
-    ViewSet for managing post moderation actions.
-
-    Provides endpoints for:
-    - Deleting inappropriate posts
-    - Temporarily blocking posts from view
-    """
-
-    permission_classes = [IsAuthenticated]
-
-    def destroy(self, request, post_id=None):
-        """
-        DELETE /api/admin/posts/<post_id>/
-
-        Permanently delete a post from the system.
-
-        Args:
-            post_id: The ID of the post to delete
-
-        Returns:
-            Response: 204 No Content on success
-        """
-        # In production, this would make a request to the post service
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(detail=True, methods=["post"])
-    def block(self, request, post_id=None):
-        """
-        POST /api/admin/posts/<post_id>/block/
-
-        Temporarily hide a post from users.
-
-        Args:
-            post_id: The ID of the post to block
-
-        Request body:
-            - duration: How long to block the post (in hours, optional)
-            - reason: Why the post is being blocked
-
-        Returns:
-            Response: Created block details or error message
-        """
-        duration = request.data.get("duration")  # Duration in hours, optional
-        reason = request.data.get("reason")
-
-        expires_at = None
-        if duration:
-            expires_at = timezone.now() + timedelta(hours=int(duration))
-
-        serializer = BlockedPostSerializer(
-            data={
-                "post_id": post_id,
-                "blocked_by": request.user.id,
-                "duration": duration,
-                "reason": reason,
-                "expires_at": expires_at,
-            }
+        metrics = ServiceMetrics.objects.create(
+            service_name=service_name,
+            cpu_usage=request.data.get("cpu_usage"),
+            memory_usage=request.data.get("memory_usage"),
+            request_count=request.data.get("request_count", 0),
+            error_count=request.data.get("error_count", 0),
+            average_response_time=request.data.get("average_response_time"),
         )
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {
+                "message": f"Metrics recorded for {service_name}",
+                "metrics_id": metrics.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class DashboardView(APIView):
+    """
+    View for the admin dashboard, providing system-wide statistics and status.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        """
+        GET /api/admin/dashboard/
+
+        Retrieve dashboard data including service health, metrics, and system statistics
+        """
+        # Get service health status
+        service_health = {
+            health.service_name: health.status for health in ServiceHealth.objects.all()
+        }
+
+        # Get latest metrics for each service
+        service_metrics = {}
+        for service in ServiceHealth.objects.values_list("service_name", flat=True):
+            latest_metric = (
+                ServiceMetrics.objects.filter(service_name=service)
+                .order_by("-timestamp")
+                .first()
+            )
+
+            if latest_metric:
+                service_metrics[service] = {
+                    "cpu_usage": latest_metric.cpu_usage,
+                    "memory_usage": latest_metric.memory_usage,
+                    "request_count": latest_metric.request_count,
+                    "error_count": latest_metric.error_count,
+                    "average_response_time": latest_metric.average_response_time,
+                }
+
+        dashboard_data = {
+            "service_health": service_health,
+            "service_metrics": service_metrics,
+            "timestamp": timezone.now(),
+        }
+
+        return Response(dashboard_data)
+
+
+@api_view(["GET"])
+def prometheus_metrics(request):
+    """
+    GET /api/admin/prometheus-metrics/
+
+    Endpoint for exposing Prometheus metrics
+    """
+    metrics_page = generate_latest()
+    return HttpResponse(metrics_page, content_type=CONTENT_TYPE_LATEST)
