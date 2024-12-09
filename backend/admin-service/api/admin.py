@@ -1,42 +1,38 @@
 from django.contrib import admin
-from .models import Report, UserWarning, BlockedPost
+from .models import ServiceHealth, ServiceMetrics
 
 
-@admin.register(Report)
-class ReportAdmin(admin.ModelAdmin):
-    """Admin interface configuration for Report model."""
+@admin.register(ServiceHealth)
+class ServiceHealthAdmin(admin.ModelAdmin):
+    """Admin interface configuration for ServiceHealth model."""
 
     list_display = (
-        "report_id",
-        "post_id",
-        "reporter_id",
+        "service_name",
         "status",
-        "created_at",
-        "resolved_at",
+        "last_check",
+        "last_successful_check",
+        "response_time",
     )
-    list_filter = ("status", "created_at", "resolved_at")
-    search_fields = ("post_id", "reporter_id", "reason")
-    readonly_fields = ("created_at", "resolved_at")
-    ordering = ("-created_at",)
+    list_filter = ("status", "last_check", "last_successful_check")
+    search_fields = ("service_name", "error_message")
+    readonly_fields = ("last_check", "last_successful_check")
+    ordering = ("service_name",)
 
 
-@admin.register(UserWarning)
-class UserWarningAdmin(admin.ModelAdmin):
-    """Admin interface configuration for UserWarning model."""
+@admin.register(ServiceMetrics)
+class ServiceMetricsAdmin(admin.ModelAdmin):
+    """Admin interface configuration for ServiceMetrics model."""
 
-    list_display = ("user_id", "warned_by", "created_at")
-    list_filter = ("created_at",)
-    search_fields = ("user_id", "warned_by", "reason")
-    readonly_fields = ("created_at",)
-    ordering = ("-created_at",)
-
-
-@admin.register(BlockedPost)
-class BlockedPostAdmin(admin.ModelAdmin):
-    """Admin interface configuration for BlockedPost model."""
-
-    list_display = ("post_id", "blocked_by", "blocked_at", "duration", "expires_at")
-    list_filter = ("blocked_at", "expires_at")
-    search_fields = ("post_id", "blocked_by", "reason")
-    readonly_fields = ("blocked_at",)
-    ordering = ("-blocked_at",)
+    list_display = (
+        "service_name",
+        "timestamp",
+        "cpu_usage",
+        "memory_usage",
+        "request_count",
+        "error_count",
+        "average_response_time",
+    )
+    list_filter = ("service_name", "timestamp")
+    search_fields = ("service_name",)
+    readonly_fields = ("timestamp",)
+    ordering = ("-timestamp",)

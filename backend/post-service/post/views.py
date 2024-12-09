@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 from rest_framework import mixins, status
 from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
 from .models import Post, Like, Comment, Hashtag
 from .serializers import (
     PostSerializer,
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -37,14 +38,15 @@ class CustomPagination(PageNumberPagination):
 
 
 class DummyViewSet(ModelViewSet):
-    
     def list(self, request):
         return Response("Dummy Response")
+
 
 class PostViewSet(ModelViewSet):
     """
     ViewSet for handling CRUD operations on posts.
     """
+
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedCustom]
@@ -52,15 +54,19 @@ class PostViewSet(ModelViewSet):
 
     def get_permissions(self):
         """Allow unauthenticated access to list and retrieve"""
-        if self.action in ['list', 'retrieve', 'by_user']:
+        if self.action in ["list", "retrieve", "by_user"]:
             return [AllowAny()]
         return super().get_permissions()
 
     @action(detail=False, methods=["get"], url_path="user/(?P<username>[^/.]+)")
     def by_user(self, request, username=None):
+<<<<<<< HEAD
+        try:
+=======
         try: 
+>>>>>>> master
             posts = Post.objects.filter(username=username)
-            page= self.paginate_queryset(posts)
+            page = self.paginate_queryset(posts)
 
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -69,7 +75,7 @@ class PostViewSet(ModelViewSet):
             return Response(serializer.data)
         except Exception as e:
             return Response(
-                {"error" : f"Failed to retrieve posts from user {username}"},
+                {"error": f"Failed to retrieve posts from user {username}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -93,7 +99,7 @@ class PostViewSet(ModelViewSet):
             # Create a mutable copy of the data
             data = {}
             for key, value in request.data.items():
-                if key == 'hashtags':
+                if key == "hashtags":
                     # Convert hashtags to a list if it's not already
                     if isinstance(value, str):
                         data[key] = [value]
@@ -101,22 +107,22 @@ class PostViewSet(ModelViewSet):
                         data[key] = value
                     else:
                         data[key] = []
-                elif key != 'image':  # Skip the image file
+                elif key != "image":  # Skip the image file
                     data[key] = value
-            
+
             # Add the username
             data["username"] = request.user
 
             # If there's an image file, add it separately
-            if 'image' in request.FILES:
+            if "image" in request.FILES:
                 logger.debug(f"Image file found: {request.FILES['image'].name}")
-                data['image'] = request.FILES['image']
+                data["image"] = request.FILES["image"]
 
             # Log the data being passed to serializer
             logger.debug(f"Data being passed to serializer: {data}")
 
             serializer = self.get_serializer(data=data)
-            
+
             # Log validation errors if any
             if not serializer.is_valid():
                 logger.error(f"Serializer validation errors: {serializer.errors}")
@@ -148,6 +154,7 @@ class SpecificPostViewSet(ModelViewSet):
     """
     ViewSet for handling posts from followed users.
     """
+
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedCustom]
@@ -163,7 +170,7 @@ class SpecificPostViewSet(ModelViewSet):
         try:
             # Get the authenticated user's username
             username = str(self.request.user)
-            
+
             # Call the user service with the correct endpoint including username
             response = requests.get(
                 f"http://user-service:8000/api/users/following/{username}/",
@@ -171,7 +178,7 @@ class SpecificPostViewSet(ModelViewSet):
             )
             if response.status_code == 200:
                 # Extract usernames from the following users list
-                following_users = [user['username'] for user in response.json()]
+                following_users = [user["username"] for user in response.json()]
                 return Post.objects.filter(username__in=following_users)
             return Post.objects.none()
         except requests.RequestException:
@@ -192,29 +199,27 @@ class LikeViewSet(ModelViewSet):
     """
     ViewSet for handling likes on posts.
     """
+
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
     permission_classes = [IsAuthenticatedCustom]
 
     @action(detail=True, methods=["get"], url_path="check")
     def check(self, request, id=None):
-        """Check if a user has liked a post"""    
+        """Check if a user has liked a post"""
         try:
             post = Post.objects.get(id=id)
             like = Like.objects.filter(post=post, username=request.user).first()
-            return Response({
-                "liked": bool(like)
-            })
+            return Response({"liked": bool(like)})
         except Post.DoesNotExist:
             return Response(
-                {"error": "Post not found"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
             logger.error(f"Error checking like status: {str(e)}")
             return Response(
-                {"error": "Failed to check like status"}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "Failed to check like status"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     @action(detail=True, methods=["post"])
@@ -224,14 +229,10 @@ class LikeViewSet(ModelViewSet):
             post = Post.objects.get(id=id)
         except Post.DoesNotExist:
             return Response(
-                {"error": "Post not found"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        data = {
-            "post": post.id,
-            "username": request.user
-        }
+        data = {"post": post.id, "username": request.user}
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -240,15 +241,14 @@ class LikeViewSet(ModelViewSet):
     @action(detail=True, methods=["delete"])
     def unlike(self, request, id=None):
         """Unlike a post"""
-        
+
         try:
             like = Like.objects.get(post=id, username=request.user)
             like.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Like.DoesNotExist:
             return Response(
-                {"error": "Like not found"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Like not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
 
@@ -256,6 +256,7 @@ class CommentViewSet(ModelViewSet):
     """
     ViewSet for handling comments on posts.
     """
+
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedCustom]
@@ -263,16 +264,16 @@ class CommentViewSet(ModelViewSet):
 
     def get_permissions(self):
         """Allow unauthenticated access to list and retrieve"""
-        if self.action in ['list', 'retrieve', 'list_comments']:
+        if self.action in ["list", "retrieve", "list_comments"]:
             return [AllowAny()]
         return super().get_permissions()
 
     def get_queryset(self):
         """Filter comments by post"""
-        post_id = self.kwargs.get('post_id')
+        post_id = self.kwargs.get("post_id")
         return Comment.objects.filter(post=post_id)
-    
-    @action(detail=False, methods=["get"], url_path=r'by_post/(?P<post_id>[^/.]+)')
+
+    @action(detail=False, methods=["get"], url_path=r"by_post/(?P<post_id>[^/.]+)")
     def list_comments(self, request, post_id=None):
         """
         Retrieve all comments for a specific post by post ID.
@@ -284,8 +285,8 @@ class CommentViewSet(ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(comments, many=True)
         return Response(serializer.data)
-    
-    @action(detail=False, methods=["post"], url_path=r'add/(?P<post_id>[^/.]+)')
+
+    @action(detail=False, methods=["post"], url_path=r"add/(?P<post_id>[^/.]+)")
     def create_comment(self, request, post_id=None):
         """
         Add a comment to a specific post by post ID.
@@ -293,7 +294,9 @@ class CommentViewSet(ModelViewSet):
         try:
             post = Post.objects.get(id=post_id)
         except Post.DoesNotExist:
-            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         # Prepare the data for the serializer
         data = request.data.copy()
@@ -312,27 +315,26 @@ class CommentViewSet(ModelViewSet):
         """
         try:
             comment = Comment.objects.get(id=pk)
-            
+
             # Check if the requesting user is the comment creator
             if str(comment.username) != str(request.user):
                 return Response(
-                    {"error": "You can only delete your own comments"}, 
-                    status=status.HTTP_403_FORBIDDEN
+                    {"error": "You can only delete your own comments"},
+                    status=status.HTTP_403_FORBIDDEN,
                 )
-            
+
             comment.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
         except Comment.DoesNotExist:
             return Response(
-                {"error": "Comment not found"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Comment not found"}, status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
             logger.error(f"Error deleting comment: {str(e)}")
             return Response(
-                {"error": "Failed to delete comment"}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "Failed to delete comment"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -340,6 +342,7 @@ class HashtagViewSet(ModelViewSet):
     """
     ViewSet for handling hashtags and their associated posts.
     """
+
     queryset = Hashtag.objects.all()
     serializer_class = HashtagSerializer
     permission_classes = []
@@ -380,12 +383,15 @@ class HashtagViewSet(ModelViewSet):
         hashtag = Hashtag.objects(tag=tag).first()
         if not hashtag:
             return Response(
-                {"error": f"Hashtag #{tag} not found."}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": f"Hashtag #{tag} not found."},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         posts = hashtag.posts
         serializer = PostSerializer(posts, many=True)
+<<<<<<< HEAD
+        return Response({"hashtag": f"#{tag}", "posts": serializer.data})
+=======
         response_data = {
             "hashtag": f"#{tag}",
             "posts": serializer.data
@@ -394,12 +400,14 @@ class HashtagViewSet(ModelViewSet):
         # Cache the results
         cache.set(f'hashtag_{tag}', response_data, timeout=900)  # Cache for 15 minutes
         return Response(response_data)
+>>>>>>> master
 
 
 class HashtagGeneratorViewSet(GenericViewSet):
     """
     ViewSet for generating hashtags using AI.
     """
+
     permission_classes = [IsAuthenticatedCustom]
 
     def _encode_image(self, image_path):
@@ -471,29 +479,57 @@ class HashtagGeneratorViewSet(GenericViewSet):
     @action(detail=False, methods=["post"])
     def generate(self, request):
         """Generate hashtags based on text and/or image"""
-        
+
         text = request.data.get("text")
         image = request.FILES.get("image")
 
         if not text and not image:
             return Response(
                 {"error": "Please provide either text or an image"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         hashtags = self._generate_hashtags(text=text, image=image)
         return Response({"hashtags": hashtags})
-    
+
     @action(detail=False, methods=["get"])
     def get_predefined_hashtags(self, request):
+<<<<<<< HEAD
+=======
         # Try to get from cache
         cached_hashtags = cache.get('predefined_hashtags')
         if cached_hashtags is not None:
             return Response({"hashtags": cached_hashtags})
 
         # If not in cache, get the predefined list
+>>>>>>> master
         hashtags = ["America", "USA", "TrumpWon", "ElonMusk", "Twitter"]
         
         # Cache the results
         cache.set('predefined_hashtags', hashtags, timeout=3600)  # Cache for 1 hour
         return Response({"hashtags": hashtags})
+
+
+class HealthCheckView(APIView):
+    """
+    Health check endpoint for the post service
+    """
+
+    permission_classes = []
+
+    def get(self, request):
+        try:
+            # Check MongoDB connection by making a simple query
+            Post.objects.first()
+
+            return Response(
+                {
+                    "status": "healthy",
+                    "database": "connected",
+                }
+            )
+        except Exception as e:
+            return Response(
+                {"status": "unhealthy", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
