@@ -40,8 +40,8 @@ jobs:
     - name: Generate Init Scripts on EC2
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@52.90.236.164 << 'EOF'
-        mkdir -p /home/ec2-user/deployment/init-mysql
-        mkdir -p /home/ec2-user/deployment/init-mongodb
+        mkdir -p /home/ec2-user/deployment/backend/init-mysql
+        mkdir -p /home/ec2-user/deployment/backend/init-mongodb
         echo "${{ secrets.INIT_MYSQL_SCRIPT }}" > /home/ec2-user/deployment/backend/init-mysql/init.sql
         echo "${{ secrets.INIT_MONGO_SCRIPT }}" > /home/ec2-user/deployment/backend/init-mongodb/init-mongo.js
         EOF
