@@ -40,7 +40,7 @@ const MainContent: React.FC<MainContentProps> = ({ refreshTrigger }) => {
       }
 
       const response = await fetch(
-        "http://localhost:8001/api/posts/following/",
+        "http://54.208.64.57:8001/api/posts/following/",
         {
           headers,
         }

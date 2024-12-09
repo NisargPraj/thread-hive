@@ -20,11 +20,14 @@ const Explore = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch("http://localhost:8001/api/posts/posts/", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
+        const response = await fetch(
+          "http://54.208.64.57:8001/api/posts/posts/",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new Error("Failed to fetch posts");

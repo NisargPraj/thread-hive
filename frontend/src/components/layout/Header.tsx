@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Home, User, Bell, Mail, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const BASE_URL = "http://localhost:8000/api/users/";
+const BASE_URL = "http://54.208.64.57:8000/api/users/";
 
 const Header: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);

@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - master
-
+      
+      
+      
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -35,6 +37,9 @@ jobs:
 
         echo "${{ secrets.USER_SERVICE_ENV }}" > /home/ec2-user/deployment/backend/user-service/.env
         echo "${{ secrets.POST_SERVICE_ENV }}" > /home/ec2-user/deployment/backend/post-service/.env
+        echo "${{ secrets.ADMIN_SERVICE_ENV }}" > /home/ec2-user/deployment/backend/admin-service/.env
+        
+
         EOF
 
     - name: Generate Init Scripts on EC2
@@ -42,8 +47,12 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@54.208.64.57 << 'EOF'
         mkdir -p /home/ec2-user/deployment/backend/init-mysql
         mkdir -p /home/ec2-user/deployment/backend/init-mongodb
+        mkdir -p /home/ec2-user/deployment/backend/init-admin-mysql
+
         echo "${{ secrets.INIT_MYSQL_SCRIPT }}" > /home/ec2-user/deployment/backend/init-mysql/init.sql
         echo "${{ secrets.INIT_MONGO_SCRIPT }}" > /home/ec2-user/deployment/backend/init-mongodb/init-mongo.js
+        echo "${{ secrets.INIT_ADMIN_MYSQL }}" > /home/ec2-user/deployment/backend/init-admin-mysql/init.sql
+        
         EOF
 
 
@@ -52,5 +61,5 @@ jobs:
         ssh -o StrictHostKeyChecking=no ec2-user@54.208.64.57 << 'EOF'
         cd /home/ec2-user/deployment/backend
         docker-compose down -v
-        docker-compose up --build
+        docker-compose up --build -d
         EOF

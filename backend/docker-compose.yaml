@@ -23,6 +23,7 @@ services:
       - ./post-service/.env
     depends_on:
       - mongodb
+      - redis
     networks:
       - thread-hive-network
 
@@ -40,6 +41,17 @@ services:
       - kafka-consumer
     networks:
       - thread-hive-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - thread-hive-network
+    command: redis-server --save 60 1 --loglevel warning
 
   mysql_db:
     image: mysql:8.0
@@ -133,8 +145,8 @@ services:
     networks:
       - thread-hive-network
     environment:
-      KAFKA_BROKER: kafka:9092  # Kafka broker address
-      TOPIC_NAME: user_signup  # Replace with your topic name
+      KAFKA_BROKER: kafka:9092 # Kafka broker address
+      TOPIC_NAME: user_signup # Replace with your topic name
 
 volumes:
   mysql_data:
@@ -142,6 +154,7 @@ volumes:
   neo4j_data:
   neo4j_logs:
   mongodb_data:
+  redis_data:
 
 networks:
   thread-hive-network:

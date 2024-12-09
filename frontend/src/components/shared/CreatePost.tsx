@@ -39,7 +39,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
       }
 
       const response = await fetch(
-        "http://localhost:8001/api/posts/hashtags/generate/generate/",
+        "http://54.208.64.57:8001/api/posts/hashtags/generate/generate/",
         {
           method: "POST",
           headers: {
@@ -94,14 +94,17 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
         throw new Error("Authentication required");
       }
 
-      const response = await fetch("http://localhost:8001/api/posts/posts/", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-        body: formData,
-      });
+      const response = await fetch(
+        "http://54.208.64.57:8001/api/posts/posts/",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
