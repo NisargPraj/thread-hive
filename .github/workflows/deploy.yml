@@ -25,8 +25,7 @@ jobs:
 
     - name: Copy files to EC2
       run: |
-        scp -o StrictHostKeyChecking=no -r ./docker-compose.yaml ec2-user@52.90.236.164:/home/ec2-user/deployment/
-        scp -o StrictHostKeyChecking=no -r ./service-files ec2-user@52.90.236.164:/home/ec2-user/deployment/
+        scp -o StrictHostKeyChecking=no -r ./backend/ ec2-user@52.90.236.164:/home/ec2-user/deployment/
 
     - name: Deploy on EC2
       run: |
