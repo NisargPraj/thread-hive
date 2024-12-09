@@ -44,7 +44,7 @@ const Post: React.FC<PostProps> = ({
     const checkLikeStatus = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8001/api/posts/likes/${id}/check/`,
+          `http://54.208.64.57:8001/api/posts/likes/${id}/check/`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -73,7 +73,7 @@ const Post: React.FC<PostProps> = ({
 
     try {
       const response = await fetch(
-        `http://localhost:8001/api/posts/likes/${id}/${
+        `http://54.208.64.57:8001/api/posts/likes/${id}/${
           isLiked ? "unlike" : "like"
         }/`,
         {
@@ -96,7 +96,7 @@ const Post: React.FC<PostProps> = ({
   const fetchComments = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8001/api/posts/comments/by_post/${id}/`,
+        `http://54.208.64.57:8001/api/posts/comments/by_post/${id}/`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -123,7 +123,7 @@ const Post: React.FC<PostProps> = ({
 
     try {
       const response = await fetch(
-        `http://localhost:8001/api/posts/comments/add/${id}/`,
+        `http://54.208.64.57:8001/api/posts/comments/add/${id}/`,
         {
           method: "POST",
           headers: {
@@ -148,7 +148,7 @@ const Post: React.FC<PostProps> = ({
   const handleDeleteComment = async (commentId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:8001/api/posts/comments/${commentId}/delete/`,
+        `http://54.208.64.57:8001/api/posts/comments/${commentId}/delete/`,
         {
           method: "DELETE",
           headers: {

@@ -24,7 +24,7 @@ export const ProfilePosts: React.FC<ProfilePostsProps> = ({ username }) => {
     const fetchUserPosts = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8001/api/posts/posts/user/${username}/`,
+          `http://54.208.64.57:8001/api/posts/posts/user/${username}/`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
