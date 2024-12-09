@@ -52,5 +52,5 @@ jobs:
         ssh -o StrictHostKeyChecking=no ec2-user@54.208.64.57 << 'EOF'
         cd /home/ec2-user/deployment/backend
         docker-compose down -v
-        docker-compose up --build
+        docker-compose up --build -d
         EOF
