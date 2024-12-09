@@ -2,6 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth.models import User, make_password
 from .models import CustomUser
 from .utils.neo4j_conn import neo4j_connection
+from kafka import KafkaProducer
+import json
 
 
 class UserSignupSerializer(serializers.ModelSerializer):
@@ -39,7 +41,18 @@ class UserSignupSerializer(serializers.ModelSerializer):
             'first_name': user.first_name,
             'last_name': user.last_name
         })
-
+        producer = KafkaProducer(
+            bootstrap_servers=['kafka:9092'],  # Replace with your Kafka server address
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+        topic = "user_signup"
+        producer.send(topic, {
+            'user_id': user.id,
+            'first_name': user.first_name,
+            'username': user.username,
+            'email': user.email
+        })
+        producer.close()
         return user
 
 
