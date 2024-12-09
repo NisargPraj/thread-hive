@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, User, Trash2 } from "lucide-react";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
@@ -16,7 +16,8 @@ interface PostProps {
   content: string;
   timestamp: string;
   likes: number;
-  images: string[];
+  comments_count: number;
+  image?: string;
 }
 
 const Post: React.FC<PostProps> = ({
@@ -25,23 +26,25 @@ const Post: React.FC<PostProps> = ({
   content,
   timestamp,
   likes: initialLikes,
-  images,
+  comments_count: initialCommentsCount,
+  image,
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [commentCount, setCommentCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(initialCommentsCount);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(initialLikes);
+  const [avatarErrors, setAvatarErrors] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const formattedTime = formatDistanceToNowStrict(new Date(timestamp)) + " ago";
+  const currentUser = localStorage.getItem("username");
 
-  // Check if user has liked the post
   useEffect(() => {
     const checkLikeStatus = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8001/api/posts/${id}/like/`,
+          `http://localhost:8001/api/posts/likes/${id}/check/`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -70,7 +73,9 @@ const Post: React.FC<PostProps> = ({
 
     try {
       const response = await fetch(
-        `http://localhost:8001/api/posts/${id}/like/`,
+        `http://localhost:8001/api/posts/likes/${id}/${
+          isLiked ? "unlike" : "like"
+        }/`,
         {
           method: isLiked ? "DELETE" : "POST",
           headers: {
@@ -91,7 +96,7 @@ const Post: React.FC<PostProps> = ({
   const fetchComments = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8001/api/posts/${id}/comments/`,
+        `http://localhost:8001/api/posts/comments/by_post/${id}/`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -101,7 +106,6 @@ const Post: React.FC<PostProps> = ({
       if (response.ok) {
         const data = await response.json();
         setComments(data.results || []);
-        setCommentCount(data.count || 0);
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -119,7 +123,7 @@ const Post: React.FC<PostProps> = ({
 
     try {
       const response = await fetch(
-        `http://localhost:8001/api/posts/${id}/comments/`,
+        `http://localhost:8001/api/posts/comments/add/${id}/`,
         {
           method: "POST",
           headers: {
@@ -141,8 +145,53 @@ const Post: React.FC<PostProps> = ({
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8001/api/posts/comments/${commentId}/delete/`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        setComments((prevComments) =>
+          prevComments.filter((comment) => comment.id !== commentId)
+        );
+        setCommentCount((prev) => prev - 1);
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
+  };
+
   const navigateToProfile = (username: string) => {
     navigate(`/profile/${username}`);
+  };
+
+  const handleAvatarError = (username: string) => {
+    setAvatarErrors((prev) => new Set([...prev, username]));
+  };
+
+  const renderAvatar = (username: string, size: "small" | "large") => {
+    const dimensions = size === "small" ? "w-8 h-8" : "w-10 h-10";
+    return avatarErrors.has(username) ? (
+      <div
+        className={`${dimensions} rounded-full bg-gray-200 flex items-center justify-center`}
+      >
+        <User className={size === "small" ? "w-4 h-4" : "w-6 h-6"} />
+      </div>
+    ) : (
+      <img
+        src={`/images/avatar/${username}.jpg`}
+        alt={`${username}'s Avatar`}
+        className={`${dimensions} rounded-full`}
+        onError={() => handleAvatarError(username)}
+      />
+    );
   };
 
   return (
@@ -150,14 +199,10 @@ const Post: React.FC<PostProps> = ({
       <div className="p-4">
         <div className="flex items-start">
           <div
-            className="cursor-pointer"
+            className="cursor-pointer mr-4"
             onClick={() => navigateToProfile(username)}
           >
-            <img
-              src={`/images/avatar/${username}.jpg`}
-              alt={`${username}'s Avatar`}
-              className="w-10 h-10 rounded-full mr-4"
-            />
+            {renderAvatar(username, "large")}
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
@@ -170,16 +215,13 @@ const Post: React.FC<PostProps> = ({
               <span className="text-sm text-gray-500">{formattedTime}</span>
             </div>
             <p className="mt-2">{content}</p>
-            {images.length > 0 && (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {images.map((img, index) => (
-                  <img
-                    key={index}
-                    src={img}
-                    alt={`Post image ${index + 1}`}
-                    className="w-full h-auto rounded"
-                  />
-                ))}
+            {image && image.trim() !== "" && (
+              <div className="mt-4">
+                <img
+                  src={image}
+                  alt="Post image"
+                  className="w-full h-auto rounded"
+                />
               </div>
             )}
             <div className="flex items-center mt-4 space-x-6 text-gray-500">
@@ -234,18 +276,25 @@ const Post: React.FC<PostProps> = ({
                         className="cursor-pointer"
                         onClick={() => navigateToProfile(comment.username)}
                       >
-                        <img
-                          src={`/images/avatar/${comment.username}.jpg`}
-                          alt={`${comment.username}'s Avatar`}
-                          className="w-8 h-8 rounded-full"
-                        />
+                        {renderAvatar(comment.username, "small")}
                       </div>
                       <div className="flex-1">
-                        <div
-                          className="font-semibold cursor-pointer hover:underline"
-                          onClick={() => navigateToProfile(comment.username)}
-                        >
-                          {comment.username}
+                        <div className="flex items-start justify-between">
+                          <div
+                            className="font-semibold cursor-pointer hover:underline"
+                            onClick={() => navigateToProfile(comment.username)}
+                          >
+                            {comment.username}
+                          </div>
+                          {currentUser === comment.username && (
+                            <button
+                              onClick={() => handleDeleteComment(comment.id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors"
+                              title="Delete comment"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                         <p className="text-sm">{comment.content}</p>
                         <span className="text-xs text-gray-500">

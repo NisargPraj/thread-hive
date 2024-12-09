@@ -7,7 +7,8 @@ interface PostData {
   content: string;
   timestamp: string;
   likes: number;
-  images: string[];
+  comments_count: number;
+  image: string;
 }
 
 interface ApiResponse {
@@ -29,7 +30,7 @@ const MainContent: React.FC<MainContentProps> = ({ refreshTrigger }) => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       const headers: HeadersInit = {
         Accept: "application/json",
       };
@@ -38,15 +39,19 @@ const MainContent: React.FC<MainContentProps> = ({ refreshTrigger }) => {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const response = await fetch("http://localhost:8001/api/posts/all/", {
-        headers,
-      });
+      const response = await fetch(
+        "http://localhost:8001/api/posts/following/",
+        {
+          headers,
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch posts");
       }
 
       const data: ApiResponse = await response.json();
+      console.log("data, ", data);
       setPosts(
         data.results.sort(
           (a, b) =>
@@ -105,7 +110,8 @@ const MainContent: React.FC<MainContentProps> = ({ refreshTrigger }) => {
           content={post.content}
           timestamp={post.timestamp}
           likes={post.likes}
-          images={post.images}
+          comments_count={post.comments_count}
+          image={post.image}
         />
       ))}
     </div>

@@ -79,7 +79,7 @@ const Header: React.FC = () => {
           Thread Hive
         </Link>
         <nav className="flex items-center space-x-4">
-          <Link to="/" className="p-2 hover:bg-gray-100 rounded-full">
+          <Link to="/home/" className="p-2 hover:bg-gray-100 rounded-full">
             <Home size={24} />
           </Link>
           <Link

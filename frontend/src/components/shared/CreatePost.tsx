@@ -9,7 +9,7 @@ interface CreatePostProps {
 
 const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   const [content, setContent] = useState("");
-  const [images, setImages] = useState<File[]>([]);
+  const [image, setImage] = useState<File | null>(null);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingHashtags, setIsGeneratingHashtags] = useState(false);
@@ -17,9 +17,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newImages = Array.from(e.target.files);
-      setImages((prev) => [...prev, ...newImages]);
+    if (e.target.files && e.target.files.length > 0) {
+      setImage(e.target.files[0]);
     }
   };
 
@@ -35,18 +34,18 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
 
       const formData = new FormData();
       formData.append("text", content);
-
-      if (images.length > 0) {
-        formData.append("image", images[0]);
+      if (image) {
+        formData.append("image", image);
       }
 
       const response = await fetch(
-        "http://localhost:8001/api/posts/hashtags/generate/",
+        "http://localhost:8001/api/posts/hashtags/generate/generate/",
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: "include",
           body: formData,
         }
       );
@@ -57,7 +56,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
       }
 
       const { hashtags: generatedHashtags } = await response.json();
-      setHashtags(generatedHashtags);
+      setHashtags(generatedHashtags.map((tag: string) => `${tag}`));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to generate hashtags"
@@ -67,8 +66,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = () => {
+    setImage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,9 +80,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
       formData.append("content", content);
 
       // Append each image to formData
-      images.forEach((image) => {
-        formData.append("images", image);
-      });
+      if (image) {
+        formData.append("image", image);
+      }
 
       // Append each hashtag individually to formData
       hashtags.forEach((tag) => {
@@ -95,11 +94,12 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
         throw new Error("Authentication required");
       }
 
-      const response = await fetch("http://localhost:8001/api/posts/create/", {
+      const response = await fetch("http://localhost:8001/api/posts/posts/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: formData,
       });
 
@@ -110,7 +110,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
 
       // Reset form
       setContent("");
-      setImages([]);
+      setImage(null);
       setHashtags([]);
 
       // Notify parent component
@@ -190,29 +190,23 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
           ref={fileInputRef}
           className="hidden"
           accept="image/*"
-          multiple
           onChange={handleImageChange}
         />
 
-        {/* Image Previews */}
-        {images.length > 0 && (
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {images.map((image, index) => (
-              <div key={index} className="relative">
-                <img
-                  src={URL.createObjectURL(image)}
-                  alt={`Upload preview ${index + 1}`}
-                  className="w-full h-32 object-cover rounded"
-                />
-                <button
-                  type="button"
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                  onClick={() => removeImage(index)}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+        {image && (
+          <div className="mt-2 relative">
+            <img
+              src={URL.createObjectURL(image)}
+              alt="Upload preview"
+              className="w-full h-32 object-cover rounded"
+            />
+            <button
+              type="button"
+              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+              onClick={removeImage}
+            >
+              ×
+            </button>
           </div>
         )}
 

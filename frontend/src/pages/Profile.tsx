@@ -248,10 +248,10 @@ const Profile: React.FC = () => {
             <ProfilePosts username={profile.username} />
           </TabsContent>
           <TabsContent value="replies">
-            <div>Replies content coming soon...</div>
+            <div>No Replies Yet..</div>
           </TabsContent>
           <TabsContent value="media">
-            <div>Media content coming soon...</div>
+            <div>No Media Yet..</div>
           </TabsContent>
         </Tabs>
       </div>

@@ -41,7 +41,7 @@ const Login: React.FC = () => {
       localStorage.setItem("refresh_token", data.refresh);
 
       // Redirect to home or profile after login
-      navigate("/");
+      navigate("/home/");
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message);

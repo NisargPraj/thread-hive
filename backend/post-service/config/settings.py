@@ -29,8 +29,8 @@ INSTALLED_APPS = [
 
 # Middleware configuration (minimal for MongoEngine)
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # Must be at the top
     "django.middleware.security.SecurityMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",  # Required by auth
@@ -85,15 +85,23 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8001",
     "http://localhost:3000"
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # Allow all CORS methods
 CORS_ALLOW_METHODS = [

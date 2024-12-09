@@ -42,7 +42,7 @@ const LeftSidebar: React.FC = () => {
     <nav>
       <ul className="space-y-2">
         <li>
-          <Link to="/">
+          <Link to="/home/">
             <Button variant="ghost">
               <Home size={20} className="mr-2" />
               Home
