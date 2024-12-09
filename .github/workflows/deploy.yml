@@ -31,11 +31,10 @@ jobs:
     - name: Generate .env Files on EC2
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@52.90.236.164 << 'EOF'
-        mkdir /home/ec2-user/new
-        mkdir -p /home/ec2-user/deployment/user-service
-        mkdir -p /home/ec2-user/deployment/post-service
-        echo "${{ secrets.USER_SERVICE_ENV }}" > /home/ec2-user/deployment/user-service/.env
-        echo "${{ secrets.POST_SERVICE_ENV }}" > /home/ec2-user/deployment/post-service/.env
+  
+
+        echo "${{ secrets.USER_SERVICE_ENV }}" > /home/ec2-user/deployment/backend/user-service/.env
+        echo "${{ secrets.POST_SERVICE_ENV }}" > /home/ec2-user/deployment/backend/post-service/.env
         EOF
 
     - name: Generate Init Scripts on EC2
@@ -43,8 +42,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@52.90.236.164 << 'EOF'
         mkdir -p /home/ec2-user/deployment/init-mysql
         mkdir -p /home/ec2-user/deployment/init-mongodb
-        echo "${{ secrets.INIT_MYSQL_SCRIPT }}" > /home/ec2-user/deployment/init-mysql/init.sql
-        echo "${{ secrets.INIT_MONGO_SCRIPT }}" > /home/ec2-user/deployment/init-mongodb/init-mongo.js
+        echo "${{ secrets.INIT_MYSQL_SCRIPT }}" > /home/ec2-user/deployment/backend/init-mysql/init.sql
+        echo "${{ secrets.INIT_MONGO_SCRIPT }}" > /home/ec2-user/deployment/backend/init-mongodb/init-mongo.js
         EOF
 
 
