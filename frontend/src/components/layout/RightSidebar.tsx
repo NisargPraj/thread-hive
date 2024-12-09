@@ -5,13 +5,10 @@ const RightSideBar: React.FC = () => {
     <div>
       <h2 className="font-bold mb-4">Trend Hashtags</h2>
       <ul className="space-y-2">
-        <li>#LetsGooo</li>
-        <li>#SJSU</li>
-        <li>#FullStackForce</li>
-        <li>#NewGrads</li>
-        <li>#ExceptAnthony</li>
-        <li>#HeGraduated</li>
-        <li>#LastYear</li>
+        <li>Rams</li>
+        <li>SJSU</li>
+        <li>Enterprise Tech</li>
+        <li>Elon Musk</li>
       </ul>
     </div>
   );

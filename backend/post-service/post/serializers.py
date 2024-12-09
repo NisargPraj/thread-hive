@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from rest_framework_mongoengine.serializers import DocumentSerializer
 from .models import Post, Like, Comment, Hashtag
+from django.conf import settings
+import os
 
 
 class PostSerializer(DocumentSerializer):
@@ -12,6 +14,9 @@ class PostSerializer(DocumentSerializer):
     hashtags = serializers.ListField(
         child=serializers.CharField(max_length=50), allow_empty=True, required=False
     )
+    likes = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
+    image = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = Post
@@ -19,12 +24,51 @@ class PostSerializer(DocumentSerializer):
             "id",
             "username",
             "content",
-            "images",
+            "image",
             "hashtags",
             "created_at",
             "updated_at",
+            "likes",
+            "comments_count",
         ]
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at", "likes", "comments_count"]
+
+    def get_likes(self, obj):
+        """Get the number of likes for a post"""
+        return Like.objects(post=obj).count()
+
+    def get_comments_count(self, obj):
+        """Get the number of comments for a post"""
+        return Comment.objects(post=obj).count()
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['timestamp'] = ret.pop('created_at')
+        # Convert image to full URL if it exists
+        if instance.image:
+            # Get the filename from the GridFS storage
+            filename = instance.image.filename
+            if filename:
+                # Construct the URL using the filename
+                ret['image'] = f"http://localhost:8001{settings.MEDIA_URL}posts/{instance.username}/{filename}"
+            else:
+                ret['image'] = None
+        return ret
+
+    def validate_image(self, value):
+        """
+        Validate the image file.
+        """
+        if value:
+            # Check file extension
+            ext = os.path.splitext(value.name)[1].lower()
+            if ext not in ['.jpg', '.jpeg', '.png', '.gif']:
+                raise serializers.ValidationError("Unsupported image format. Use JPEG, PNG or GIF.")
+            
+            # Check file size (max 5MB)
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError("Image file too large. Size should not exceed 5MB.")
+        return value
 
     def validate_hashtags(self, value):
         """
@@ -46,7 +90,19 @@ class PostSerializer(DocumentSerializer):
         Override to handle hashtag logic during post creation.
         """
         hashtags = validated_data.pop("hashtags", [])
-        post = Post(**validated_data)
+        
+        # Create the post instance
+        image_file = validated_data.pop('image', None)  # remove image from validated_data
+        post = Post(**validated_data)  # create post without image
+
+        if image_file:
+            # now safely put the image once
+            post.image.put(
+                image_file,
+                filename=f"{validated_data['username']}_{image_file.name}",
+                content_type=image_file.content_type
+            )
+
         post.save()
 
         # Process each hashtag
@@ -97,11 +153,31 @@ class PostSerializer(DocumentSerializer):
                 if hashtag not in instance.hashtags:
                     instance.hashtags.append(hashtag)
 
-        # Update the instance
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+        # Handle image update
+        if 'image' in validated_data:
+            image_file = validated_data['image']
+            if image_file:
+                # Delete old image if it exists
+                if instance.image:
+                    instance.image.delete()
+                
+                # Set the filename to include username for organization
+                filename = f"{instance.username}_{image_file.name}"
+                instance.image.put(
+                    image_file,
+                    filename=filename,
+                    content_type=image_file.content_type
+                )
+            elif instance.image:
+                # If image is set to None, delete the existing image
+                instance.image.delete()
 
+        # Update other fields
+        for attr, value in validated_data.items():
+            if attr != 'image':  # Skip image as we handled it above
+                setattr(instance, attr, value)
+        
+        instance.save()
         return instance
 
 

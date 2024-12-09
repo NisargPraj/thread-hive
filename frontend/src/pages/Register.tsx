@@ -36,7 +36,6 @@ const Register: React.FC = () => {
       });
 
       if (!response.ok) {
-        // Extract error messages from the response if available
         const errData = await response.json();
         const errorMessage = errData.detail || "Failed to sign up.";
         throw new Error(errorMessage);
@@ -45,8 +44,12 @@ const Register: React.FC = () => {
       const data = await response.json();
       console.log("Signup successful:", data);
       navigate("/login");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
@@ -95,6 +98,16 @@ const Register: React.FC = () => {
         >
           {loading ? "Signing up..." : "Sign Up"}
         </button>
+
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="text-blue-500 hover:text-blue-700"
+          >
+            Already have an account? Login
+          </button>
+        </div>
       </form>
     </div>
   );

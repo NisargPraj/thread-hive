@@ -5,15 +5,26 @@ import Profile from "@/pages/Profile";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Landing from "@/pages/Landing";
+import Explore from "@/pages/Explore";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Home />} />
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/home" element={<Home />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/profile/:username" element={<Profile />} />
         </Route>
       </Routes>

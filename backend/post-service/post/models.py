@@ -8,6 +8,8 @@ from mongoengine import (
     ReferenceField,
 )
 from datetime import datetime
+import os
+from django.conf import settings
 
 
 class Post(Document):
@@ -19,7 +21,14 @@ class Post(Document):
     content = StringField(required=True, max_length=280)  # Post content (max 280 chars)
     created_at = DateTimeField(default=datetime.utcnow)  # Creation timestamp
     updated_at = DateTimeField(default=datetime.utcnow)  # Update timestamp
-    images = ListField(FileField(), default=list)  # Optional list of uploaded images
+    image = FileField(
+        required=False,
+        upload_to=lambda instance, filename: os.path.join(
+            'posts',
+            instance.username,
+            filename
+        )
+    )
     hashtags = ListField(ReferenceField('Hashtag'), default=list)  # References to associated Hashtag documents
 
     meta = {

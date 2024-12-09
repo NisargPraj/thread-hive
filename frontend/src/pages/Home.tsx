@@ -1,9 +1,15 @@
-// pages/Home.tsx
-import React from "react";
-import Post from "@/components/shared/Post";
-import { posts } from "@/constants/post";
+import React, { useState } from "react";
+import MainContent from "../components/MainContent";
+import CreatePost from "../components/shared/CreatePost";
 
 const Home: React.FC = () => {
+  const [refreshTrigger, setRefreshTrigger] = useState(false);
+
+  const handlePostCreated = () => {
+    // Toggle the refresh trigger to cause MainContent to refetch
+    setRefreshTrigger((prev) => !prev);
+  };
+
   return (
     <div className="space-y-4">
       <div className="border-b pb-4">
@@ -11,25 +17,12 @@ const Home: React.FC = () => {
       </div>
 
       {/* Create Post Section */}
-      <div className="p-4 border-b">
-        <textarea
-          className="w-full p-2 border rounded-lg resize-none"
-          placeholder="What's happening?"
-          rows={3}
-        />
-        <div className="flex justify-end mt-2">
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600">
-            Post
-          </button>
-        </div>
+      <div className="px-4">
+        <CreatePost onPostCreated={handlePostCreated} />
       </div>
 
-      {/* Posts Feed */}
-      <div className="space-y-4">
-        {posts.map((post) => (
-          <Post key={post.id} {...post} />
-        ))}
-      </div>
+      {/* Posts List */}
+      <MainContent refreshTrigger={refreshTrigger} />
     </div>
   );
 };
