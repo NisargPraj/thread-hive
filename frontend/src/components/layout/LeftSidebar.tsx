@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Home, Search, Bell, Mail, Bookmark, User } from "lucide-react";
+import {
+  Home,
+  Search,
+  Bell,
+  Mail,
+  Bookmark,
+  User,
+  LayoutDashboard,
+} from "lucide-react";
 
 const BASE_URL = "http://54.208.64.57:8000/api/users/";
 
 const LeftSidebar: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const currentUserUrl = `${BASE_URL}profile/`;
 
@@ -28,8 +37,8 @@ const LeftSidebar: React.FC = () => {
         }
 
         const currentUserData = await currentUserResponse.json();
-
         setCurrentUser(currentUserData.username);
+        setIsAdmin(currentUserData.username == "admin" || false);
       } catch (error: unknown) {
         console.error(
           "Failed to fetch current user:",
@@ -92,6 +101,16 @@ const LeftSidebar: React.FC = () => {
             </Button>
           )}
         </li>
+        {isAdmin && (
+          <li>
+            <Link to="/admin">
+              <Button variant="ghost">
+                <LayoutDashboard size={20} className="mr-2" />
+                Admin Dashboard
+              </Button>
+            </Link>
+          </li>
+        )}
       </ul>
     </nav>
   );
