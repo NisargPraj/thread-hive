@@ -14,4 +14,4 @@ RUN chmod +x /wait-for-it.sh
 RUN pip install --no-cache-dir kafka-python
 
 # Set the default command to run wait-for-it.sh and then the consumer
-CMD ["/wait-for-it.sh", "kafka:9092", "--", "python", "consumer.py"]
+CMD ["/wait-for-it.sh", "kafka:9092","--timeout=60" ,"--", "python", "consumer.py"]
