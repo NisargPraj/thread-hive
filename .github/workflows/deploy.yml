@@ -30,7 +30,7 @@ jobs:
     - name: Deploy on EC2
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@52.90.236.164 << 'EOF'
-        cd /home/ec2-user/deployment/
+        cd /home/ec2-user/deployment/backend
         docker-compose down
         docker-compose pull
         docker-compose up -d
