@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { UserPlus, User, UserMinus } from "lucide-react";
 
-const BASE_URL = "http://localhost:8000/api/users/";
+const BASE_URL = "http://54.208.64.57:8000/api/users/";
 
 interface UserProfile {
   username: string;

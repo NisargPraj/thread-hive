@@ -8,6 +8,7 @@ from email import encoders
 import os
 import time
 
+
 def send_email_with_attachment(sender_email, sender_password, recipient_email, subject, message):
     try:
         # Set up the SMTP server

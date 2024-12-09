@@ -1,6 +1,9 @@
 import os
 import time
 import requests
+from kafka import KafkaAdminClient
+from kafka.admin import NewTopic
+from kafka.errors import KafkaError
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -31,16 +34,55 @@ class ServiceHealthView(APIView):
     def get_service_url(self, service_name):
         """Helper method to get service URLs from environment variables"""
         service_urls = {
-            "user-service": f"{os.getenv('USER_SERVICE_URL')}/health/",
-            "post-service": f"{os.getenv('POST_SERVICE_URL')}/health/",
-            "kafka-consumer": f"{os.getenv('KAFKA_CONSUMER_URL')}/health/",
+            "user-service": f"{os.getenv('USER_SERVICE_URL')}/api/users/health/",
+            "post-service": f"{os.getenv('POST_SERVICE_URL')}/api/posts/health/",
+            "kafka": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
         }
         return service_urls.get(service_name)
+
+    def check_kafka_health(self):
+        """
+        Check Kafka health by attempting to create an admin client connection
+        and listing topics
+        """
+        try:
+            start_time = time.time()
+            admin_client = KafkaAdminClient(
+                bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
+                client_id="admin-health-check",
+            )
+
+            # Try to list topics to verify connection
+            topics = admin_client.list_topics()
+            response_time = (time.time() - start_time) * 1000
+
+            admin_client.close()
+
+            return {
+                "status": "healthy",
+                "response_time": response_time,
+                "last_check": timezone.now(),
+                "last_successful_check": timezone.now(),
+                "error_message": None,
+                "topics": len(topics),
+            }
+
+        except KafkaError as e:
+            return {
+                "status": "down",
+                "error_message": str(e),
+                "last_check": timezone.now(),
+                "last_successful_check": None,
+                "response_time": None,
+            }
 
     def check_service_health(self, service_name):
         """
         Perform health check for a specific service
         """
+        if service_name == "kafka":
+            return self.check_kafka_health()
+
         url = self.get_service_url(service_name)
         if not url:
             return {"status": "down", "error": f"Unknown service: {service_name}"}
@@ -50,15 +92,32 @@ class ServiceHealthView(APIView):
             response = requests.get(url, timeout=5)
             response_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 
-            health_status = {
-                "status": "healthy" if response.status_code == 200 else "degraded",
-                "response_time": response_time,
-                "last_check": timezone.now(),
-                "error_message": None,
-            }
-
-            if response.status_code == 200:
-                health_status["last_successful_check"] = timezone.now()
+            # Parse the response to check if the service reports itself as healthy
+            try:
+                response_data = response.json()
+                service_status = response_data.get("status")
+                if service_status == "healthy":
+                    health_status = {
+                        "status": "healthy",
+                        "response_time": response_time,
+                        "last_check": timezone.now(),
+                        "last_successful_check": timezone.now(),
+                        "error_message": None,
+                    }
+                else:
+                    health_status = {
+                        "status": "degraded",
+                        "response_time": response_time,
+                        "last_check": timezone.now(),
+                        "error_message": response_data.get("error"),
+                    }
+            except:
+                health_status = {
+                    "status": "degraded",
+                    "response_time": response_time,
+                    "last_check": timezone.now(),
+                    "error_message": "Invalid response format",
+                }
 
             return health_status
 
@@ -75,7 +134,7 @@ class ServiceHealthView(APIView):
 
         Retrieve health status for all services
         """
-        services = ["user-service", "post-service", "kafka-consumer"]
+        services = ["user-service", "post-service", "kafka"]
         health_statuses = {}
 
         for service in services:
@@ -100,6 +159,10 @@ class ServiceHealthView(APIView):
                 "error_message": service_health.error_message,
             }
 
+            # Add Kafka-specific information
+            if service == "kafka" and health_check.get("topics") is not None:
+                health_statuses[service]["topics"] = health_check["topics"]
+
         return Response(health_statuses)
 
 
@@ -110,6 +173,28 @@ class MetricsView(APIView):
 
     permission_classes = [AllowAny]
 
+    def get_kafka_metrics(self):
+        """Get Kafka metrics through JMX interface"""
+        try:
+            # Try to get Kafka metrics through JMX
+            admin_client = KafkaAdminClient(
+                bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
+                client_id="admin-metrics",
+            )
+
+            topics = admin_client.list_topics()
+            metrics = {
+                "broker_count": 1,  # Assuming single broker for now
+                "topic_count": len(topics),
+                "partition_count": 1,  # Default partition count
+            }
+
+            admin_client.close()
+            return metrics
+
+        except KafkaError as e:
+            return {"error": str(e)}
+
     def get(self, request, format=None):
         """
         GET /api/admin/metrics/
@@ -117,17 +202,23 @@ class MetricsView(APIView):
         Retrieve metrics for all services
         """
         metrics = {}
-        services = ["user-service", "post-service", "kafka-consumer"]
+        services = ["user-service", "post-service", "kafka"]
 
         for service in services:
-            # Get the latest metrics for each service
+            # Get the latest metrics
             latest_metrics = (
                 ServiceMetrics.objects.filter(service_name=service)
                 .order_by("-timestamp")
                 .first()
             )
 
-            if latest_metrics:
+            if service == "kafka":
+                kafka_metrics = self.get_kafka_metrics()
+                if "error" not in kafka_metrics:
+                    metrics["kafka"] = kafka_metrics
+                else:
+                    metrics["kafka"] = {"status": "No metrics available"}
+            elif latest_metrics:
                 metrics[service] = {
                     "cpu_usage": latest_metrics.cpu_usage,
                     "memory_usage": latest_metrics.memory_usage,
@@ -185,31 +276,38 @@ class DashboardView(APIView):
 
         Retrieve dashboard data including service health, metrics, and system statistics
         """
-        # Get service health status
-        service_health = {
-            health.service_name: health.status for health in ServiceHealth.objects.all()
-        }
+        # First, ensure we have up-to-date health checks
+        health_view = ServiceHealthView()
+        health_data = health_view.get(request).data
 
         # Get latest metrics for each service
         service_metrics = {}
-        for service in ServiceHealth.objects.values_list("service_name", flat=True):
-            latest_metric = (
-                ServiceMetrics.objects.filter(service_name=service)
-                .order_by("-timestamp")
-                .first()
-            )
+        services = ["user-service", "post-service", "kafka"]
 
-            if latest_metric:
-                service_metrics[service] = {
-                    "cpu_usage": latest_metric.cpu_usage,
-                    "memory_usage": latest_metric.memory_usage,
-                    "request_count": latest_metric.request_count,
-                    "error_count": latest_metric.error_count,
-                    "average_response_time": latest_metric.average_response_time,
-                }
+        for service in services:
+            if service == "kafka":
+                metrics_view = MetricsView()
+                kafka_metrics = metrics_view.get_kafka_metrics()
+                if "error" not in kafka_metrics:
+                    service_metrics["kafka"] = kafka_metrics
+            else:
+                latest_metric = (
+                    ServiceMetrics.objects.filter(service_name=service)
+                    .order_by("-timestamp")
+                    .first()
+                )
+
+                if latest_metric:
+                    service_metrics[service] = {
+                        "cpu_usage": latest_metric.cpu_usage,
+                        "memory_usage": latest_metric.memory_usage,
+                        "request_count": latest_metric.request_count,
+                        "error_count": latest_metric.error_count,
+                        "average_response_time": latest_metric.average_response_time,
+                    }
 
         dashboard_data = {
-            "service_health": service_health,
+            "service_health": health_data,
             "service_metrics": service_metrics,
             "timestamp": timezone.now(),
         }
