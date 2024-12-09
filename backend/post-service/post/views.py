@@ -60,11 +60,7 @@ class PostViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="user/(?P<username>[^/.]+)")
     def by_user(self, request, username=None):
-<<<<<<< HEAD
         try:
-=======
-        try: 
->>>>>>> master
             posts = Post.objects.filter(username=username)
             page = self.paginate_queryset(posts)
 
@@ -129,13 +125,13 @@ class PostViewSet(ModelViewSet):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             self.perform_create(serializer)
-            
+
             # Invalidate hashtag cache when new post is created with hashtags
-            if 'hashtags' in data and data['hashtags']:
-                cache.delete('all_hashtags')
-                for hashtag in data['hashtags']:
-                    cache.delete(f'hashtag_{hashtag}')
-            
+            if "hashtags" in data and data["hashtags"]:
+                cache.delete("all_hashtags")
+                for hashtag in data["hashtags"]:
+                    cache.delete(f"hashtag_{hashtag}")
+
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=201, headers=headers)
         except Exception as e:
@@ -351,14 +347,14 @@ class HashtagViewSet(ModelViewSet):
     def list(self, request, *args, **kwargs):
         """Get all hashtags with Redis caching"""
         # Try to get hashtags from cache
-        cached_hashtags = cache.get('all_hashtags')
+        cached_hashtags = cache.get("all_hashtags")
         if cached_hashtags is not None:
             return Response(cached_hashtags)
 
         # If not in cache, get from database
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-        
+
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             response_data = self.get_paginated_response(serializer.data).data
@@ -367,15 +363,15 @@ class HashtagViewSet(ModelViewSet):
             response_data = serializer.data
 
         # Cache the results
-        cache.set('all_hashtags', response_data, timeout=900)  # Cache for 15 minutes
+        cache.set("all_hashtags", response_data, timeout=900)  # Cache for 15 minutes
         return Response(response_data)
 
     def retrieve(self, request, *args, **kwargs):
         """Get posts for a specific hashtag with Redis caching"""
         tag = kwargs.get("pk")
-        
+
         # Try to get from cache
-        cached_data = cache.get(f'hashtag_{tag}')
+        cached_data = cache.get(f"hashtag_{tag}")
         if cached_data is not None:
             return Response(cached_data)
 
@@ -389,18 +385,11 @@ class HashtagViewSet(ModelViewSet):
 
         posts = hashtag.posts
         serializer = PostSerializer(posts, many=True)
-<<<<<<< HEAD
-        return Response({"hashtag": f"#{tag}", "posts": serializer.data})
-=======
-        response_data = {
-            "hashtag": f"#{tag}",
-            "posts": serializer.data
-        }
+        response_data = {"hashtag": f"#{tag}", "posts": serializer.data}
 
         # Cache the results
-        cache.set(f'hashtag_{tag}', response_data, timeout=900)  # Cache for 15 minutes
+        cache.set(f"hashtag_{tag}", response_data, timeout=900)  # Cache for 15 minutes
         return Response(response_data)
->>>>>>> master
 
 
 class HashtagGeneratorViewSet(GenericViewSet):
@@ -494,19 +483,16 @@ class HashtagGeneratorViewSet(GenericViewSet):
 
     @action(detail=False, methods=["get"])
     def get_predefined_hashtags(self, request):
-<<<<<<< HEAD
-=======
         # Try to get from cache
-        cached_hashtags = cache.get('predefined_hashtags')
+        cached_hashtags = cache.get("predefined_hashtags")
         if cached_hashtags is not None:
             return Response({"hashtags": cached_hashtags})
 
         # If not in cache, get the predefined list
->>>>>>> master
         hashtags = ["America", "USA", "TrumpWon", "ElonMusk", "Twitter"]
-        
+
         # Cache the results
-        cache.set('predefined_hashtags', hashtags, timeout=3600)  # Cache for 1 hour
+        cache.set("predefined_hashtags", hashtags, timeout=3600)  # Cache for 1 hour
         return Response({"hashtags": hashtags})
 
 

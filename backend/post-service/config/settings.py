@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_mongoengine",
-    "corsheaders", 
+    "corsheaders",
     "post",  # Your post-service app
 ]
 
@@ -50,7 +50,7 @@ CACHES = {
         "LOCATION": "redis://redis:6379/0",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+        },
     }
 }
 
@@ -99,11 +99,11 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -111,8 +111,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://localhost:8001",
-    "http://localhost:3000"
+    "http://localhost:8002",
+    "http://54.84.95.41:5173",
+    "http://54.84.95.41:8080",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
