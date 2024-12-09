@@ -77,6 +77,44 @@ services:
     networks:
       - thread-hive-network
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - thread-hive-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    networks:
+      - thread-hive-network
+
+  kafka-consumer:
+    build:
+      context: ./kafka-consumer
+    depends_on:
+      - kafka
+    networks:
+      - thread-hive-network
+    environment:
+      KAFKA_BROKER: kafka:9092  # Kafka broker address
+      TOPIC_NAME: user_signup  # Replace with your topic name
+
 volumes:
   mysql_data:
   neo4j_data:
