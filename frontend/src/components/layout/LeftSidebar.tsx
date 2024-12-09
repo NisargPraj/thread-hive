@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Home, Search, Bell, Mail, Bookmark, User } from "lucide-react";
 
-const BASE_URL = "http://localhost:8000/api/users/";
+const BASE_URL = "http://54.208.64.57:8000/api/users/";
 
 const LeftSidebar: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const BASE_URL = "http://localhost:8000/api/users/";
+const BASE_URL = "http://54.208.64.57:8000/api/users/";
 
 interface LoginForm {
   username: string;
