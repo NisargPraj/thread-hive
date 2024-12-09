@@ -26,6 +26,25 @@ jobs:
     - name: Copy files to EC2
       run: |
         scp -o StrictHostKeyChecking=no -r ./backend/ ec2-user@52.90.236.164:/home/ec2-user/deployment/
+    
+    
+    - name: Generate .env Files on EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@52.90.236.164 << 'EOF'
+        
+        echo "${{ secrets.USER_SERVICE_ENV }}" > /home/ec2-user/deployment/user-service/.env
+        echo "${{ secrets.POST_SERVICE_ENV }}" > /home/ec2-user/deployment/post-service/.env
+        EOF
+
+    - name: Generate Init Scripts on EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@52.90.236.164 << 'EOF'
+        mkdir -p /home/ec2-user/deployment/init-mysql
+        mkdir -p /home/ec2-user/deployment/init-mongodb
+        echo "${{ secrets.INIT_MYSQL_SCRIPT }}" > /home/ec2-user/deployment/init-mysql/init.sql
+        echo "${{ secrets.INIT_MONGO_SCRIPT }}" > /home/ec2-user/deployment/init-mongodb/init-mongo.js
+        EOF
+
 
     - name: Deploy on EC2
       run: |
