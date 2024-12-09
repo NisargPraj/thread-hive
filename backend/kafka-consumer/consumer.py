@@ -50,13 +50,13 @@ consumer = KafkaConsumer(
 for message in consumer:
     user_data = message.value
     recipient_email = user_data['email']
-    subject = "Welcome to Our Platform!"
-    message = f"Hi {user_data['first_name']},\n\nWelcome to our platform. We're excited to have you!"
+    subject = "Welcome to Thread-Hive!"
+    message = f"Hi {user_data['first_name']},\n\nWelcome to Thread-Hive. We're excited to have you!"
     
     # Send the email
     send_email_with_attachment(
-        sender_email="", #Add email
-        sender_password="", # Add password
+        sender_email="threadhive912@gmail.com", #Add email
+        sender_password="qjur ofrr xbhz xzmk", # Add password
         recipient_email=recipient_email,
         subject=subject,
         message=message 
