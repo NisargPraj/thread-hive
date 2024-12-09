@@ -7,7 +7,6 @@ const BASE_URL = "http://localhost:8000/api/users/";
 
 const LeftSidebar: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const currentUserUrl = `${BASE_URL}profile/`;
 
@@ -31,8 +30,11 @@ const LeftSidebar: React.FC = () => {
         const currentUserData = await currentUserResponse.json();
 
         setCurrentUser(currentUserData.username);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (error: unknown) {
+        console.error(
+          "Failed to fetch current user:",
+          error instanceof Error ? error.message : "Unknown error"
+        );
       }
     };
     fetchCurrentUser();
@@ -50,10 +52,12 @@ const LeftSidebar: React.FC = () => {
           </Link>
         </li>
         <li>
-          <Button variant="ghost">
-            <Search size={20} className="mr-2" />
-            Explore
-          </Button>
+          <Link to="/explore">
+            <Button variant="ghost">
+              <Search size={20} className="mr-2" />
+              Explore
+            </Button>
+          </Link>
         </li>
         <li>
           <Button variant="ghost">
