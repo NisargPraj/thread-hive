@@ -25,12 +25,12 @@ jobs:
 
     - name: Copy files to EC2
       run: |
-        scp -o StrictHostKeyChecking=no -r ./backend/ ec2-user@54.226.233.66:/home/ec2-user/deployment/
+        scp -o StrictHostKeyChecking=no -r ./backend/ ec2-user@54.208.64.57:/home/ec2-user/deployment/
     
     
     - name: Generate .env Files on EC2
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@54.226.233.66 << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@54.208.64.57 << 'EOF'
   
 
         echo "${{ secrets.USER_SERVICE_ENV }}" > /home/ec2-user/deployment/backend/user-service/.env
@@ -39,7 +39,7 @@ jobs:
 
     - name: Generate Init Scripts on EC2
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@54.226.233.66 << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ec2-user@54.208.64.57 << 'EOF'
         mkdir -p /home/ec2-user/deployment/backend/init-mysql
         mkdir -p /home/ec2-user/deployment/backend/init-mongodb
         echo "${{ secrets.INIT_MYSQL_SCRIPT }}" > /home/ec2-user/deployment/backend/init-mysql/init.sql
@@ -49,7 +49,7 @@ jobs:
 
     - name: Deploy on EC2
       run: |
-        ssh -o StrictHostKeyChecking=no ec2-user@54.226.233.66 << 'EOF'
+        ssh -o StrictHostKeyChecking=no ec2-user@54.208.64.57 << 'EOF'
         cd /home/ec2-user/deployment/backend
         docker-compose down -v
         docker-compose up --build
