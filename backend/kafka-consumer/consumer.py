@@ -52,7 +52,7 @@ for message in consumer:
     user_data = message.value
     recipient_email = user_data['email']
     subject = "Welcome to Thread-Hive!"
-    message = f"Hi {user_data['first_name']},\n\nWelcome to Thread-Hive. We're excited to have you!"
+    message = f"Hi {user_data['username']},\n\nWelcome to Thread-Hive. We're excited to have you!"
     
     # Send the email
     send_email_with_attachment(
