@@ -16,11 +16,11 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setImage(e.target.files[0]);
-    }
-  };
+  // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.files && e.target.files.length > 0) {
+  //     setImage(e.target.files[0]);
+  //   }
+  // };
 
   const generateHashtags = async () => {
     setIsGeneratingHashtags(true);
@@ -186,15 +186,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
             </div>
           </div>
         )}
-
-        {/* Image Upload Input */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={handleImageChange}
-        />
 
         {image && (
           <div className="mt-2 relative">
