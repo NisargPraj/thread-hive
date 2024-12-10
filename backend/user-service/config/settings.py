@@ -193,4 +193,5 @@ CORS_ALLOWED_ORIGINS = [
     "http://54.84.95.41:8080",
     "http://54.84.95.41:80",
     "http://54.84.95.41:443",
+    "http://threadhive.online",
 ]
