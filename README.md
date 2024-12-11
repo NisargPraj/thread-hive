@@ -117,13 +117,4 @@ Each service requires specific environment variables. Example `.env` files are p
 - `backend/post-service/.env`
 - `backend/admin-service/.env`
 
-## 🌟 Features
 
-- User authentication and authorization
-- Post creation and sharing
-- User following/blocking system
-- Real-time updates via Kafka
-- Admin dashboard with system metrics
-- Media upload support
-- Responsive design
-- Protected routes
