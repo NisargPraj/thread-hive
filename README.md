@@ -51,7 +51,7 @@ The application is divided into frontend and backend services:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/thread-hive.git
+   git clone https://github.com/NisargPraj/thread-hive.git
    cd thread-hive
    ```
 
